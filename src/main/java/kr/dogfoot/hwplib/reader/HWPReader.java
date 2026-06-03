@@ -17,7 +17,7 @@ import kr.dogfoot.hwplib.tool.textextractor.TextExtractorListener;
 import kr.dogfoot.hwplib.util.compoundFile.reader.CompoundFileReader;
 import kr.dogfoot.hwplib.util.compoundFile.reader.StreamReader;
 
-import javax.xml.bind.DatatypeConverter;
+import java.util.Base64;
 import java.io.*;
 import java.net.URL;
 import java.util.Iterator;
@@ -106,7 +106,7 @@ public class HWPReader {
     }
 
     public static HWPFile fromBase64String(String base64) throws Exception {
-        byte[] binary = DatatypeConverter.parseBase64Binary(base64);
+        byte[] binary = Base64.getMimeDecoder().decode(base64);
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(binary);
         return HWPReader.fromInputStream(byteArrayInputStream);
     }
