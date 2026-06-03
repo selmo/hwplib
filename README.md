@@ -14,9 +14,12 @@ hwplib의 기능에 대한 질문, 버그 수정 요청은 issues 란을 이용�
 	- Apache-POI 라이브러리 - 한글 파일의 하부 구조인 Microsoft Compound File의 부분의 파싱
 	- 한글과컴퓨터에서 공개한  '한글 문서 파일 구조 5.0' 문서 ( http://www.hancom.com/etc/hwpDownload.do?gnb0=269&gnb1=271&gnb0=101&gnb1=140 ) <br>
 	  ( “본 제품은 한글과컴퓨터의 HWP 문서 파일(.hwp) 공개 문서를 참고하여 개발하였습니다." )
+	- 한글과컴퓨터에서 공개한 '한글 문서 파일 형식 3.0 / HWPML' 문서 (HWP 3.x · HWPML 읽기 지원에 사용)
 
 * 이 라이브러리에서 할 수 있는 일.(kr.dogfoot.hwplib.sample 패키지에 샘플 참고.)
 	- 한글 파일을 읽어서 객체로 생성 : Reading_HWP_FromFile, Reading_HWP_FromURL
+	- 파일 형식 자동 판별 후 읽기 (HWP5 / HWP 3.x / HWPML) : Detecting_FileFormat, HWPLibReader
+	- HWPML(.hml) 파일을 읽어서 객체로 생성 : Reading_HWPML
 	- 만들어진 객체를 파일로 저장 : Rewriting_HWPFile, SimpleEditing_HWPFile
 	- 한글 파일에서 텍스트 추출 : Extracting_Text, Extracting_Text_From_Big_File
 	- 필드 텍스트 추출/설정 : Getting_ClickHere_FieldText, Setting_ClickHere_FieldText, Finding_AllField, Setting_FieldText 
@@ -42,6 +45,23 @@ hwplib의 기능에 대한 질문, 버그 수정 요청은 issues 란을 이용�
 
 * hwpx 파일에 대한 라이브러리는 https://github.com/neolord0/hwpxlib 을 참조해 주세요.
 * hwp파일을 hwpx파일로 변환하는 라이브러리는 https://github.com/neolord0/hwp2hwpx 을 참조해 주세요.
+
+
+2026.6.4
+=========================================================================================
+* HWPML(.hml) 파일 읽기 지원 추가 (HWPMLReader)
+    - 본문 문단/글자, 글꼴·글자모양·문단모양·스타일, 표(ControlTable), 그리기 개체/글상자를 HWPFile 객체로 매핑
+    - 동일 내용의 HWP5/HWPML 문서 비교에서 텍스트 추출 99.9% 이상 일치
+* 파일 형식 자동 판별 및 통합 읽기 진입점 추가 (HWPLibReader, FormatDetector)
+    - HWP5 / HWP 3.x / HWPML 을 자동 판별하여 알맞은 리더로 라우팅 (공통 HWPFile 반환)
+* HWP 3.x (한글 3.0/97) 레거시 바이너리 읽기 부분 지원 (HWP3Reader) — 진행 중
+    - 헤더/압축 해제(raw DEFLATE)/글꼴·스타일 섹션 구조 파싱
+    - 문자 내부코드(조합형) → 유니코드 디코더 (Hwp3CharDecoder)
+    - 문단/특수문자(표 등) 순회 및 HWPFile 변환은 아직 미완
+* 빌드 JDK 베이스를 7 → 17 로 상향
+    - javax.xml.bind.DatatypeConverter → java.util.Base64 등 제거된 API 정리 (기존 동작 유지)
+* 샘플 추가 : Detecting_FileFormat, Reading_HWPML
+* 설계 및 진행 상황 문서 : docs/hwp3-hwpml-support-plan.md
 
 
 2026.2.4
