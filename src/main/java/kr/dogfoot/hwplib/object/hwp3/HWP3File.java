@@ -1,5 +1,8 @@
 package kr.dogfoot.hwplib.object.hwp3;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * 한글 3.x 레거시 바이너리 문서 파일을 나타내는 객체.
  *
@@ -40,8 +43,32 @@ public class HWP3File {
     private int styleCount;
     /** 파싱된 문단 개수.(본문 최상위 문단 리스트) */
     private int paragraphCount;
+    /** 파싱된 문단들(중첩 컨테이너 문단 포함, 문서 순서로 평탄화). */
+    private List<Hwp3Paragraph> paragraphs = new ArrayList<Hwp3Paragraph>();
 
     public HWP3File() {
+    }
+
+    public List<Hwp3Paragraph> getParagraphs() {
+        return paragraphs;
+    }
+
+    public void setParagraphs(List<Hwp3Paragraph> paragraphs) {
+        this.paragraphs = paragraphs;
+        this.paragraphCount = paragraphs.size();
+    }
+
+    /**
+     * 모든 문단 텍스트를 줄바꿈으로 이어 반환한다.
+     *
+     * @return 문서 전체 평문 텍스트
+     */
+    public String getText() {
+        StringBuilder sb = new StringBuilder();
+        for (Hwp3Paragraph p : paragraphs) {
+            sb.append(p.getText()).append('\n');
+        }
+        return sb.toString();
     }
 
     public boolean isCompressed() {
