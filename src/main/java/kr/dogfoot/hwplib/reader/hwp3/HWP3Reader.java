@@ -119,7 +119,8 @@ public class HWP3Reader {
         file.setStyleCount(nstyles);
         sr.skip(nstyles * STYLE_INFO_SIZE);
 
-        // TODO(C3): 문단 리스트 파싱(문단 정보/줄 정보/글자 모양/글자들) + hchar 디코딩
+        // 문단 리스트 파싱(C3): 문단 정보/줄 정보/글자 모양/글자들 + hchar 디코딩
+        file.setParagraphs(ForParagraphList3.parse(sr));
         return file;
     }
 
