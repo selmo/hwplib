@@ -103,47 +103,85 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- pgp 서명 -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
-                <version>1.6</version>
-                <executions>
-                    <execution>
-                        <id>sign-artifacts</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>sign</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <!-- publish -->
-            <plugin>
-                <groupId>org.sonatype.central</groupId>
-                <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.7.0</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <publishingServerId>central</publishingServerId>
-                    <autoPublish>true</autoPublish>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 
+    <!-- 기본 배포 대상: GTOne Nexus (mvn deploy). Maven Central 배포는 -P central 프로파일 사용. -->
+    <distributionManagement>
+        <repository>
+            <id>gtone-maven-releases</id>
+            <name>GTOne Releases</name>
+            <url>https://nexus.gtonesoft.com/repository/gtone-maven-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>gtone-maven-snapshots</id>
+            <name>GTOne Snapshots</name>
+            <url>https://nexus.gtonesoft.com/repository/gtone-maven-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <repositories>
         <repository>
-            <name>Central Portal Snapshots</name>
-            <id>central-portal-snapshots</id>
-            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+            <id>gtone-public</id>
+            <name>GTOne Public repository</name>
+            <url>https://nexus.gtonesoft.com/repository/maven-public/</url>
             <releases>
-                <enabled>false</enabled>
+                <enabled>true</enabled>
             </releases>
             <snapshots>
-                <enabled>true</enabled>
+                <enabled>false</enabled>
             </snapshots>
         </repository>
     </repositories>
+<!--    <repositories>-->
+<!--        <repository>-->
+<!--            <name>Central Portal Snapshots</name>-->
+<!--            <id>central-portal-snapshots</id>-->
+<!--            <url>https://central.sonatype.com/repository/maven-snapshots/</url>-->
+<!--            <releases>-->
+<!--                <enabled>false</enabled>-->
+<!--            </releases>-->
+<!--            <snapshots>-->
+<!--                <enabled>true</enabled>-->
+<!--            </snapshots>-->
+<!--        </repository>-->
+<!--    </repositories>-->
+
+    <!-- Maven Central 배포용 프로파일 (기본 비활성). 사용: mvn -P central clean deploy -->
+    <profiles>
+        <profile>
+            <id>central</id>
+            <build>
+                <plugins>
+                    <!-- pgp 서명 -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.6</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- publish to Maven Central -->
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.7.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
