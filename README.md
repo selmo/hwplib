@@ -55,6 +55,8 @@ hwplib의 기능에 대한 질문, 버그 수정 요청은 issues 란을 이용�
     - 그리기 개체 안 글상자(텍스트 박스) 텍스트 복원
     - 실문서 6종에서 HWP5 추출 대비 본문 문자 96~99.9% 일치 (본문/표/글상자 한글 누락 0)
 * 조합형 중성(中聲) 디코딩 버그 수정 — ㅚ 모음(회/최/외/되 등) 깨짐 해결
+* 신규 API 문서 : docs/hwp3-hwpml-api.md (포맷판별 / HWPLibReader / HWPMLReader / HWP3Reader)
+* 샘플 추가 : Extracting_Text_From_HWP3, Verifying_HWP3_HWPML
 * 버전 1.1.10 → 1.2.0 (하위호환 신규 기능 추가, 기존 HWP5 API 무변경)
 
 
