@@ -100,7 +100,8 @@ public class ForControl {
     }
 
     /**
-     * 표 컨트롤에서 텍스트를 추출한다
+     * 표 컨트롤에서 텍스트를 추출한다. {@link TextExtractOption#getTableFormat()}에 따라
+     * 셀/행 구분자 또는 마크다운 표로 렌더링하며, 캡션 문단도 표 뒤에 추출한다.
      *
      * @param table         표 컨트롤
      * @param option        추출 옵션
@@ -112,11 +113,173 @@ public class ForControl {
                               TextExtractOption option,
                               ParaHeadMaker paraHeadMaker,
                               StringBuilder sb) throws UnsupportedEncodingException {
-        for (Row r : table.getRowList()) {
-            for (Cell c : r.getCellList()) {
-                ForParagraphList.extract(c.getParagraphList(), option, paraHeadMaker, sb);
+        switch (option.getTableFormat()) {
+            case Delimited:
+            case Markdown:
+                structuredTable(table, option, paraHeadMaker, sb);
+                break;
+            case None:
+            default:
+                for (Row r : table.getRowList()) {
+                    for (Cell c : r.getCellList()) {
+                        ForParagraphList.extract(c.getParagraphList(), option, paraHeadMaker, sb);
+                    }
+                }
+                break;
+        }
+
+        if (table.getCaption() != null) {
+            ForParagraphList.extract(table.getCaption().getParagraphList(), option, paraHeadMaker, sb);
+        }
+    }
+
+    /**
+     * 그리드를 복원할 수 있는 최대 행/열 수.(손상된 좌표 값 방어)
+     */
+    private static final int MAX_GRID_SIZE = 4096;
+
+    /**
+     * 셀 좌표(행/열 주소와 병합 범위)로 그리드를 복원하여 표를 렌더링한다.
+     * 좌표가 유효하지 않으면(중복/범위 밖) 리스트 순서 기반으로 폴백한다.
+     */
+    private static void structuredTable(ControlTable table,
+                                        TextExtractOption option,
+                                        ParaHeadMaker paraHeadMaker,
+                                        StringBuilder sb) throws UnsupportedEncodingException {
+        boolean markdown = option.getTableFormat() == TableFormat.Markdown;
+
+        String[][] grid = gridByCoordinates(table, option, paraHeadMaker, markdown);
+        if (grid == null) {
+            grid = gridByListOrder(table, option, paraHeadMaker, markdown);
+        }
+        if (grid.length == 0) {
+            return;
+        }
+
+        if (sb.length() > 0 && sb.charAt(sb.length() - 1) != '\n') {
+            sb.append('\n');
+        }
+        for (int r = 0; r < grid.length; r++) {
+            String[] row = grid[r];
+            if (markdown) {
+                sb.append('|');
+                for (String cell : row) {
+                    sb.append(' ').append(cell == null ? "" : cell).append(" |");
+                }
+                sb.append('\n');
+                if (r == 0) {
+                    sb.append('|');
+                    for (int c = 0; c < row.length; c++) {
+                        sb.append(" --- |");
+                    }
+                    sb.append('\n');
+                }
+            } else {
+                for (int c = 0; c < row.length; c++) {
+                    if (c > 0) {
+                        sb.append('\t');
+                    }
+                    sb.append(row[c] == null ? "" : row[c]);
+                }
+                sb.append('\n');
             }
         }
+    }
+
+    /**
+     * 셀의 행/열 주소와 병합 범위로 그리드를 만든다.
+     *
+     * @return 복원된 그리드. 좌표가 유효하지 않으면 null.
+     */
+    private static String[][] gridByCoordinates(ControlTable table,
+                                                TextExtractOption option,
+                                                ParaHeadMaker paraHeadMaker,
+                                                boolean markdown) throws UnsupportedEncodingException {
+        int rowCount = 0;
+        int colCount = 0;
+        for (Row r : table.getRowList()) {
+            for (Cell c : r.getCellList()) {
+                int row = c.getListHeader().getRowIndex();
+                int col = c.getListHeader().getColIndex();
+                int rowSpan = Math.max(1, c.getListHeader().getRowSpan());
+                int colSpan = Math.max(1, c.getListHeader().getColSpan());
+                if (row < 0 || col < 0 || row + rowSpan > MAX_GRID_SIZE || col + colSpan > MAX_GRID_SIZE) {
+                    return null;
+                }
+                rowCount = Math.max(rowCount, row + rowSpan);
+                colCount = Math.max(colCount, col + colSpan);
+            }
+        }
+        if (rowCount == 0 || colCount == 0) {
+            return null;
+        }
+
+        String[][] grid = new String[rowCount][colCount];
+        for (Row r : table.getRowList()) {
+            for (Cell c : r.getCellList()) {
+                int row = c.getListHeader().getRowIndex();
+                int col = c.getListHeader().getColIndex();
+                if (grid[row][col] != null) {
+                    return null; // 좌표 충돌 → 리스트 순서 폴백
+                }
+                grid[row][col] = cellText(c, option, paraHeadMaker, markdown);
+                // 병합으로 덮인 칸은 빈 셀로 표시
+                int rowSpan = Math.max(1, c.getListHeader().getRowSpan());
+                int colSpan = Math.max(1, c.getListHeader().getColSpan());
+                for (int rr = row; rr < row + rowSpan; rr++) {
+                    for (int cc = col; cc < col + colSpan; cc++) {
+                        if (rr == row && cc == col) {
+                            continue;
+                        }
+                        if (grid[rr][cc] != null) {
+                            return null;
+                        }
+                        grid[rr][cc] = "";
+                    }
+                }
+            }
+        }
+        return grid;
+    }
+
+    /**
+     * 좌표를 신뢰할 수 없을 때, 행/셀 리스트 순서대로 그리드를 만든다.(병합 미반영)
+     */
+    private static String[][] gridByListOrder(ControlTable table,
+                                              TextExtractOption option,
+                                              ParaHeadMaker paraHeadMaker,
+                                              boolean markdown) throws UnsupportedEncodingException {
+        int rowCount = table.getRowList().size();
+        String[][] grid = new String[rowCount][];
+        for (int r = 0; r < rowCount; r++) {
+            Row row = table.getRowList().get(r);
+            grid[r] = new String[row.getCellList().size()];
+            for (int c = 0; c < grid[r].length; c++) {
+                grid[r][c] = cellText(row.getCellList().get(c), option, paraHeadMaker, markdown);
+            }
+        }
+        return grid;
+    }
+
+    /**
+     * 셀의 문단 텍스트를 한 칸짜리 문자열로 정규화한다.
+     * (구분자 충돌 방지: 줄바꿈은 마크다운이면 &lt;br&gt;, 아니면 공백으로, 탭은 공백으로,
+     * 마크다운이면 파이프를 이스케이프)
+     */
+    private static String cellText(Cell cell,
+                                   TextExtractOption option,
+                                   ParaHeadMaker paraHeadMaker,
+                                   boolean markdown) throws UnsupportedEncodingException {
+        StringBuilder cellSb = new StringBuilder();
+        ForParagraphList.extract(cell.getParagraphList(), option, paraHeadMaker, cellSb);
+        String text = cellSb.toString().replace("\r", "").trim();
+        text = text.replace("\t", " ");
+        if (markdown) {
+            text = text.replace("|", "\\|").replace("\n", "<br>");
+        } else {
+            text = text.replace('\n', ' ');
+        }
+        return text;
     }
 
     /**

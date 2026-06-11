@@ -388,6 +388,25 @@ rhwp `johab_map.rs` 의 `JOHAB_SYMBOLS`(5,893쌍) + 사적 graphic 보정(`decod
 | `reader/hwp3/ForDrawingObject3.java` | 신규(그리기 트리 → 글상자 텍스트 추출) |
 | `reader/hwp3/ForParagraphList3.java` | ch=11에서 pic_type=3 그리기 트리 텍스트 복원 연결 |
 
+## 20. 표 추출 개선 A 구현 결과 (2026-06-11) — TextExtractor 표 렌더링
+
+표 추출 개선 검토(A: 추출기 렌더링 / B: HWP3 구조 보존 / C: HWP3→HWPFile 변환) 중 **A 완료**.
+
+### 구현
+- `tool/textextractor/TableFormat`(신규): `None`(기존) / `Delimited`(셀=탭, 행=줄바꿈) / `Markdown`.
+- `TextExtractOption.tableFormat` 추가(기본 `None` — 기존 출력 호환). 복사 생성자의 `insertParaHead` 누락도 수정.
+- `ForControl.table()`: 셀 좌표(rowIndex/colIndex/rowSpan/colSpan)로 그리드 복원 → 병합 셀은 anchor에 텍스트, 덮인 칸은 빈 셀. 좌표 충돌/범위 밖이면 리스트 순서 폴백. 셀 내부 줄바꿈은 Delimited=공백, Markdown=`<br>`, 파이프 이스케이프.
+- **캡션 추출 버그 수정**: 표 캡션 문단이 모든 모드에서 추출되도록 (기존엔 통째로 누락).
+
+### 검증 (코퍼스 6종 × HWP5/HWPML)
+- 예외 0. HWP5 ↔ HWPML 마크다운 표 행 수 6종 모두 일치(교차 검증).
+- 식품방사능 표: "물고등어미검출…" 비가독 연결 → 열 정렬된 마크다운/탭 표로 복원(세로 병합 "수산물" 정확).
+- None 모드 회귀(대조 실험, git stash): 6종 중 4종 **바이트 동일**. 재정동향 +44자·중소기업 +274자는 전부 기존에 누락되던 **캡션 텍스트**("(단위: 조원, %, %p)", "< … 기업 >" 등) — 손상 없음.
+- 샘플: `src/test/sample/Extracting_Text_With_TableFormat.java`.
+
+### 잔여 (B·C)
+- B: HWP3 표 구조 보존(셀 줄/칸 주소·병합 비트 파싱 — 현재 skip 중) → C: ControlTable 변환으로 HWP3도 동일 렌더링 수혜.
+
 ## 10. 다음 액션 (착수 전 확인 요청)
 - [x] §9-1 HWP3 객체 모델 전략 확정 — 전용 모델 + 변환기
 - [x] §9-3 검증용 샘플 파일 제공 (6종 × 3포맷)
