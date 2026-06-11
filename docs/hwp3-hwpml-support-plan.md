@@ -436,6 +436,33 @@ rhwp `johab_map.rs` 의 `JOHAB_SYMBOLS`(5,893쌍) + 사적 graphic 보정(`decod
   `TextExtractor`의 TableFormat 렌더링 수혜.
 - ℓ 등 일부 기호 hchar 매핑 보강(C2 잔여).
 
+## 22. 표 추출 개선 C 구현 결과 (2026-06-11) — HWP3 → HWPFile 변환기 완성
+
+계획 §3.2("전용 모델 + 변환기")의 마지막 조각. `Hwp3ToHwpFileConverter.convert()` 구현으로
+**세 포맷(HWP5/HWPML/HWP3)이 `HWPLibReader` → `HWPFile` → `TextExtractor` 단일 파이프라인으로 통일**됨.
+
+### 구현
+- `prepareDocInfo`: TextExtractor 최소 요건(기본 CharShape/ParaShape(None)/Style + IDMappings).
+- 평탄화 리스트에서 표/텍스트박스 소유 문단(셀·캡션, 중첩 재귀)을 IdentityHashMap 셋으로
+  제외하고 최상위 문단만 변환(중복 방지). 각주/머리말 등 비구조 중첩 문단은 문서 순서대로
+  일반 문단으로 유지.
+- 문단 변환: 텍스트 코드포인트 + 객체 대체 문자(￼) 제거 + 확장 컨트롤 문자/컨트롤 1:1 순서
+  불변식 준수 + 문단 끝(0x0d) + header 카운트.
+- `Hwp3Table(isTable)` → `ControlTable`: 기하 그리드(gridRow/Col/Span) → `ListHeaderForCell`
+  좌표/스팬, 행별 anchor 셀 정렬, 셀 문단 재귀 변환(중첩 표 포함), 내용 있는 캡션만 변환.
+- boxType≠0(텍스트박스/수식/버튼) → GSO 사각형 텍스트박스.
+- `HWPLibReader`의 HWP3 경로가 예외 없이 동작(P0에서 설계한 라우팅 완성).
+
+### 검증 (HWPLibReader 자동판별 → 변환 → TextExtractor(Markdown))
+- 코퍼스 6종 예외 0.
+- **마크다운 표 행 수 6종 전부 HWP5와 일치**(56/56, 56/56, 435/435(중첩 표 포함), 4/4, 27/27, 71/71).
+- 식품방사능 27행 중 25행 바이트 동일(차이 2건은 §21의 텍스트 차원 — ℓ 매핑·원본 공백).
+- 문자 커버리지 97.1~99.9%(잔여는 기호 hchar 매핑·자동번호, 표 구조 무관).
+
+### 잔여(선택)
+- ℓ(U+2113) 등 기호 hchar 매핑 보강.
+- 표의 문단 내 정확한 anchor 위치 보존(현재 문단 끝 배치).
+
 ## 10. 다음 액션 (착수 전 확인 요청)
 - [x] §9-1 HWP3 객체 모델 전략 확정 — 전용 모델 + 변환기
 - [x] §9-3 검증용 샘플 파일 제공 (6종 × 3포맷)
