@@ -59,6 +59,24 @@ public class HWP3File {
     }
 
     /**
+     * 문서의 모든 표(코드 10 중 boxType=표) 구조를 문서 순서대로 반환한다.
+     * (표 셀 안에 중첩된 표 포함 — 셀 문단도 평탄화 리스트에 있으므로 함께 수집된다)
+     *
+     * @return 표 구조 리스트
+     */
+    public List<Hwp3Table> getTables() {
+        List<Hwp3Table> result = new ArrayList<Hwp3Table>();
+        for (Hwp3Paragraph p : paragraphs) {
+            for (Hwp3Table t : p.getTables()) {
+                if (t.isTable()) {
+                    result.add(t);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
      * 모든 문단 텍스트를 줄바꿈으로 이어 반환한다.
      *
      * @return 문서 전체 평문 텍스트

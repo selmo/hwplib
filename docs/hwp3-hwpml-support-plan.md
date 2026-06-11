@@ -407,6 +407,35 @@ rhwp `johab_map.rs` 의 `JOHAB_SYMBOLS`(5,893쌍) + 사적 graphic 보정(`decod
 ### 잔여 (B·C)
 - B: HWP3 표 구조 보존(셀 줄/칸 주소·병합 비트 파싱 — 현재 skip 중) → C: ControlTable 변환으로 HWP3도 동일 렌더링 수혜.
 
+## 21. 표 추출 개선 B 구현 결과 (2026-06-11) — HWP3 표 구조 보존
+
+### 핵심 발견
+- 셀 정보(27B, 규격 표 42)의 **줄/칸 일련 번호(offset 0/1)와 병합 비트(offset 25)는
+  "내장 시트 기능용"이라 채워지지 않는다**(코퍼스 전부 0).
+- 대신 **셀 위치(offset 4~7)·크기(offset 8~11, hunit)가 그리드와 병합을 정확히
+  인코딩** → X/Y 경계 좌표 수집으로 그리드를 기하적으로 복원.
+
+### 구현
+- `object/hwp3/Hwp3Table`(신규): boxType(0=표/1=텍스트박스/2=수식/3=버튼), 셀·캡션,
+  **`computeGrid()`** — 경계 좌표로 각 셀의 gridRow/gridCol/rowSpan/colSpan 계산.
+- `object/hwp3/Hwp3Cell`(신규): raw 필드(줄/칸/위치/크기/병합 플래그) + 계산된 그리드 좌표 + 셀 문단.
+- `Hwp3Paragraph.getTables()`: 문단에 등장한 표 구조 연결(셀 문단 객체는 평탄화 리스트와 공유).
+- `HWP3File.getTables()`: 문서 전체 표 수집(중첩 포함).
+- `ForParagraphList3` case 10: 셀 정보를 skip하지 않고 구조로 파싱. **평탄화 동작은 그대로 유지**.
+- 샘플: `Reading_HWP3_Tables.java`(구조 → 마크다운 렌더링).
+
+### 검증
+- 식품방사능 표 HWP3 그리드 렌더링 vs HWP5 `TableFormat.Markdown` 정답지:
+  **27행 중 25행 바이트 동일**. 차이 2건은 구조 무관(ℓ(U+2113) hchar 매핑 누락 1자,
+  원본 파일 자체의 공백 1칸).
+- 코퍼스 6종: 표 168개·셀 2,698개·병합 331개 — **그리드 빈칸/겹침 0**.
+- `getText()` 하위 호환: 6종 모두 MD5 바이트 동일(stash 대조 실험).
+
+### 잔여
+- **C**: `Hwp3ToHwpFileConverter`에서 Hwp3Table → ControlTable 매핑 → HWP3도
+  `TextExtractor`의 TableFormat 렌더링 수혜.
+- ℓ 등 일부 기호 hchar 매핑 보강(C2 잔여).
+
 ## 10. 다음 액션 (착수 전 확인 요청)
 - [x] §9-1 HWP3 객체 모델 전략 확정 — 전용 모델 + 변환기
 - [x] §9-3 검증용 샘플 파일 제공 (6종 × 3포맷)

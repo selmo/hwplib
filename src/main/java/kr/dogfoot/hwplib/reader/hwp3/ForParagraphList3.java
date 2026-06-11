@@ -1,6 +1,8 @@
 package kr.dogfoot.hwplib.reader.hwp3;
 
+import kr.dogfoot.hwplib.object.hwp3.Hwp3Cell;
 import kr.dogfoot.hwplib.object.hwp3.Hwp3Paragraph;
+import kr.dogfoot.hwplib.object.hwp3.Hwp3Table;
 import kr.dogfoot.hwplib.util.hwp3.Hwp3CharDecoder;
 import kr.dogfoot.hwplib.util.hwp3.Hwp3StreamReader;
 
@@ -112,6 +114,7 @@ public class ForParagraphList3 {
         // 글자들(hchar) 순회
         StringBuilder text = new StringBuilder(charCount);
         List<Hwp3Paragraph> nested = new ArrayList<Hwp3Paragraph>();
+        List<Hwp3Table> tables = new ArrayList<Hwp3Table>();
 
         int i = 0;
         while (i < charCount) {
@@ -119,7 +122,7 @@ public class ForParagraphList3 {
             i++;
 
             if (ch > 0 && ch <= 31 && ch != 13) {
-                i += consumeControl(sr, ch, text, nested, depth);
+                i += consumeControl(sr, ch, text, nested, tables, depth);
             } else if (ch != 0 && ch != 13) {
                 int cp = Hwp3CharDecoder.toCodePoint(ch);
                 if (cp >= 0) {
@@ -129,7 +132,9 @@ public class ForParagraphList3 {
             }
         }
 
-        out.add(new Hwp3Paragraph(text.toString()));
+        Hwp3Paragraph paragraph = new Hwp3Paragraph(text.toString());
+        paragraph.setTables(tables); // 표 구조 보존(셀 문단 객체는 평탄화 리스트와 공유)
+        out.add(paragraph);
         out.addAll(nested); // 컨테이너 중첩 문단을 문서 순서대로 평탄화
         return false;
     }
@@ -139,7 +144,7 @@ public class ForParagraphList3 {
      * (최초 1슬롯은 호출부에서 이미 i++ 처리)
      */
     private static int consumeControl(Hwp3StreamReader sr, int ch, StringBuilder text,
-                                      List<Hwp3Paragraph> nested, int depth) {
+                                      List<Hwp3Paragraph> nested, List<Hwp3Table> tables, int depth) {
         switch (ch) {
             case 30:   // 묶음 빈칸
             case 31: { // 고정 폭 빈칸
@@ -195,7 +200,7 @@ public class ForParagraphList3 {
             }
             default:
                 // 일반형(8바이트 헤더 = ch + dword + ch). dword(=header_val1)와 닫기 ch 소비.
-                return consumeGeneralControl(sr, ch, text, nested, depth);
+                return consumeGeneralControl(sr, ch, text, nested, tables, depth);
         }
     }
 
@@ -204,7 +209,7 @@ public class ForParagraphList3 {
      * 정보 등)을 코드별로 소비한다. 슬롯은 항상 헤더 4개(추가 3).
      */
     private static int consumeGeneralControl(Hwp3StreamReader sr, int ch, StringBuilder text,
-                                             List<Hwp3Paragraph> nested, int depth) {
+                                             List<Hwp3Paragraph> nested, List<Hwp3Table> tables, int depth) {
         long headerVal1 = sr.readUInt32(); // 자료구조 길이(코드에 따라 의미 다름)
         sr.readUInt16();                   // 닫기 코드(ch 반복)
 
@@ -217,11 +222,20 @@ public class ForParagraphList3 {
                 if (cellCount <= 0) {
                     cellCount = 1;
                 }
-                sr.skip(27 * cellCount);          // 셀 정보
+                Hwp3Table table = new Hwp3Table();
+                table.setBoxType(u16(info, 78));
                 for (int c = 0; c < cellCount; c++) {
-                    parseInto(sr, nested, depth + 1); // 셀 문단
+                    table.getCells().add(readCellInfo(sr));
                 }
-                parseInto(sr, nested, depth + 1);    // 캡션 문단
+                table.computeGrid();
+                for (int c = 0; c < cellCount; c++) {
+                    Hwp3Cell cell = table.getCells().get(c);
+                    parseInto(sr, cell.getParagraphs(), depth + 1); // 셀 문단(구조)
+                    nested.addAll(cell.getParagraphs());            // 평탄화(하위 호환, 객체 공유)
+                }
+                parseInto(sr, table.getCaption(), depth + 1);       // 캡션 문단
+                nested.addAll(table.getCaption());
+                tables.add(table);
                 break;
             }
             case 11: { // 그림 / 그리기 개체
@@ -292,6 +306,23 @@ public class ForParagraphList3 {
             text.append(OBJECT_REPLACEMENT);
         }
         return 3; // 헤더 8바이트 = 4 슬롯(최초 1 + 추가 3)
+    }
+
+    /**
+     * 셀 정보(27바이트, 규격 표 42)를 읽는다.
+     * (offset 0/1: 줄/칸 번호, 4~7: 위치, 8~11: 크기, 25: 대각선/병합 플래그)
+     */
+    private static Hwp3Cell readCellInfo(Hwp3StreamReader sr) {
+        byte[] b = sr.readBytes(27);
+        Hwp3Cell cell = new Hwp3Cell();
+        cell.setRow(b[0] & 0xFF);
+        cell.setCol(b[1] & 0xFF);
+        cell.setPosX(u16(b, 4));
+        cell.setPosY(u16(b, 6));
+        cell.setWidth(u16(b, 8));
+        cell.setHeight(u16(b, 10));
+        cell.setMergeFlags(b[25] & 0xFF);
+        return cell;
     }
 
     private static int u16(byte[] b, int off) {
