@@ -93,7 +93,7 @@ public class ForFillInfo {
     }
 
     /**
-     * 그림 정보을 쓴다.
+     * ImageFill, Bullet 안에 있는 그림 정보을 쓴다.
      *
      * @param pi 그림 정보
      * @param sw 스트림 라이터
@@ -101,8 +101,8 @@ public class ForFillInfo {
      */
     public static void pictureInfo(PictureInfo pi, StreamWriter sw)
             throws IOException {
-        sw.writeSInt1(pi.getBrightness());
         sw.writeSInt1(pi.getContrast());
+        sw.writeSInt1(pi.getBrightness());
         sw.writeUInt1(pi.getEffect().getValue());
         sw.writeUInt2(pi.getBinItemID());
     }
