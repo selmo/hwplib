@@ -240,6 +240,11 @@ public class HWPReader {
 
             if (sr.getCurrentRecordHeader().getTagID() == HWPTag.MEMO_LIST) {
                 ForMemo.read(hwpFile.getBodyText().addNewMemo(), sr);
+            } else {
+                // 메모가 아닌 레코드는 본문을 건너뛰고 다음 헤더로 넘어간다.
+                // 건너뛰지 않으면 헤더 직후 상태가 유지돼 같은 레코드에서 무한 루프에 빠진다.
+                sr.skipToEndRecord();
+                sr.nextRecord();
             }
         }
     }
