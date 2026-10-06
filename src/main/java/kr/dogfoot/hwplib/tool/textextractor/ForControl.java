@@ -4,6 +4,7 @@ import kr.dogfoot.hwplib.object.bodytext.control.*;
 import kr.dogfoot.hwplib.object.bodytext.control.gso.GsoControl;
 import kr.dogfoot.hwplib.object.bodytext.control.table.Cell;
 import kr.dogfoot.hwplib.object.bodytext.control.table.Row;
+import kr.dogfoot.hwplib.object.etc.HWPString;
 import kr.dogfoot.hwplib.tool.textextractor.paraHead.ParaHeadMaker;
 
 import java.io.UnsupportedEncodingException;
@@ -364,8 +365,22 @@ public class ForControl {
      */
     private static void additionalText(ControlAdditionalText additionalText,
                                        StringBuilder sb) {
-        sb.append(additionalText.getHeader().getMainText()).append("\n");
-        sb.append(additionalText.getHeader().getSubText()).append("\n");
+        appendHWPString(additionalText.getHeader().getMainText(), sb);
+        appendHWPString(additionalText.getHeader().getSubText(), sb);
+    }
+
+    /**
+     * HWPString의 문자열을 줄바꿈과 함께 추가한다. 값이 없으면 줄바꿈만 추가한다.
+     *
+     * @param str HWPString 객체
+     * @param sb  추출된 텍스트를 저정할 StringBuilder 객체
+     */
+    private static void appendHWPString(HWPString str, StringBuilder sb) {
+        String s = (str == null) ? null : str.toUTF16LEString();
+        if (s != null) {
+            sb.append(s);
+        }
+        sb.append("\n");
     }
 
     /**
