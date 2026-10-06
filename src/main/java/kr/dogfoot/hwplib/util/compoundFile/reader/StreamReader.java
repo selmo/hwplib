@@ -383,6 +383,35 @@ public class StreamReader {
         }
     }
 
+    /**
+     * 현재 레코드의 남은 본문을 읽어, 그 레코드 범위만 읽을 수 있는 StreamReader를 만든다.
+     * 반환된 리더에서 레코드 범위를 넘어 읽으면 0으로 채워지므로, 레코드 크기가 스펙과 다른 파일에서도
+     * 이 리더(부모)는 다음 레코드 헤더 위치를 유지한다.
+     *
+     * @return 현재 레코드 본문만 읽는 StreamReader
+     * @throws IOException
+     */
+    public StreamReader recordBodyReader() throws IOException {
+        long remain = header.getSize() - readAfterHeader;
+        byte[] body = new byte[(int) Math.max(remain, 0)];
+        int offset = 0;
+        while (offset < body.length) {
+            int n = is.read(body, offset, body.length - offset);
+            if (n < 0) {
+                break;
+            }
+            offset += n;
+        }
+        forwardPosition(body.length);
+
+        StreamReader r = new StreamReader().init(fileVersion, new ByteArrayInputStream(body), body.length);
+        r.header.setTagID(header.getTagID());
+        r.header.setLevel(header.getLevel());
+        r.header.setSize(body.length);
+        r.docInfo = docInfo;
+        return r;
+    }
+
     public void setDocInfo(DocInfo docInfo) {
         this.docInfo = docInfo;
     }

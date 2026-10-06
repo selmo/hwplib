@@ -122,7 +122,10 @@ public class ParaHeadMaker {
     }
 
     public String paraHeadString(Paragraph paragraph) {
-        ParaShape paraShape = hwpFile.getDocInfo().getParaShapeList().get(paragraph.getHeader().getParaShapeId());
+        ParaShape paraShape = paraShape(paragraph.getHeader().getParaShapeId());
+        if (paraShape == null) {
+            return "";
+        }
         switch (paraShape.getProperty1().getParaHeadShape()) {
             case None:
                 return "";
@@ -140,10 +143,19 @@ public class ParaHeadMaker {
     }
 
     private String outline(int styleID, byte paraLevel) {
+        if (styleID < 0 || styleID >= hwpFile.getDocInfo().getStyleList().size()) {
+            return null;
+        }
         Style style = hwpFile.getDocInfo().getStyleList().get(styleID);
-        ParaShape outlineParaShape = hwpFile.getDocInfo().getParaShapeList().get(style.getParaShapeId());
+        ParaShape outlineParaShape = paraShape(style.getParaShapeId());
+        if (outlineParaShape == null) {
+            return null;
+        }
 
         Numbering numbering = getNumbering(outlineParaShape.getParaHeadId());
+        if (numbering == null) {
+            return null;
+        }
         LevelNumbering lv;
         try {
             lv = numbering.getLevelNumbering(paraLevel + 1);
@@ -164,13 +176,27 @@ public class ParaHeadMaker {
         }
     }
 
+    /**
+     * 문단 모양을 반환한다. 아이디가 문단 모양 목록 범위를 벗어나면 null을 반환한다.
+     */
+    private ParaShape paraShape(int paraShapeId) {
+        if (paraShapeId < 0 || paraShapeId >= hwpFile.getDocInfo().getParaShapeList().size()) {
+            return null;
+        }
+        return hwpFile.getDocInfo().getParaShapeList().get(paraShapeId);
+    }
+
     private Numbering getNumbering(int paraHeadId) {
         if (paraHeadId == 0) return defaultNumbering;
+        if (paraHeadId < 0 || paraHeadId > hwpFile.getDocInfo().getNumberingList().size()) return null;
         return hwpFile.getDocInfo().getNumberingList().get(paraHeadId - 1);
     }
 
     private String numbering(int paraHeadID, byte paraLevel) {
         Numbering numbering = getNumbering(paraHeadID);
+        if (numbering == null) {
+            return null;
+        }
 
         LevelNumbering lv;
         try {
@@ -205,7 +231,9 @@ public class ParaHeadMaker {
     }
 
     private String bullet(int paraHeadId, byte paraLevel) {
-        if (paraHeadId > 0) {
+        if (paraHeadId > hwpFile.getDocInfo().getBulletList().size()) {
+            return null;
+        } else if (paraHeadId > 0) {
             Bullet bullet = hwpFile.getDocInfo().getBulletList().get(paraHeadId - 1);
             return bullet.getBulletChar().toUTF16LEString();
         } else {

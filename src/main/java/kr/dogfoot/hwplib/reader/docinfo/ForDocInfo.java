@@ -42,7 +42,15 @@ public class ForDocInfo {
 
         while (sr.isEndOfStream() == false) {
             sr.readRecordHeader();
-            recordBody();
+            // 레코드 본문을 레코드 범위로 제한해 읽는다. 레코드 크기가 스펙과 달라도(덜/더 읽음)
+            // 다음 레코드 헤더 위치가 어긋나지 않는다.
+            StreamReader streamReader = sr;
+            this.sr = streamReader.recordBodyReader();
+            try {
+                recordBody();
+            } finally {
+                this.sr = streamReader;
+            }
         }
     }
 
