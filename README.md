@@ -63,6 +63,15 @@ hwplib의 기능에 대한 질문, 버그 수정 요청은 issues 란을 이용�
 * HWPX 형식 판별 (FileFormat.HWPX) — HWPX 파일을 열면 hwpxlib 사용을 안내하는 예외
 * 표 캡션 추출 옵션 추가 : TextExtractOption.setInsertTableCaption(false)로 1.1.x 출력과 동일하게 캡션 제외 (기본 true)
 * 배포용 문서를 저장하면 다시 읽을 수 없는 파일이 되던 문제 수정 — 일반 문서로 저장
+* 텍스트 추출 누락 보완 (KORDOC-BENCH PDF 대조 기준, 각 옵션 기본 true · false면 기존 출력과 동일)
+    - 그림/도형/수식 캡션 : TextExtractOption.setInsertObjectCaption()
+    - 양식 개체(체크박스·라디오 버튼·명령 단추 캡션, 입력 상자·콤보 상자 값) : setInsertFormObjectText()
+    - 자동 번호(그림/표/수식 번호, 각주/미주 번호, 문단 안 위치) : setInsertAutoNumber()
+* HWP 3.x 문자 디코딩 보완 — 한자, 따옴표, 가운뎃점, 원문자, 글머리표 누락 및 한컴 PUA 문자 잘림 수정
+    - 한컴 HWP5 변환본 대비 누락 글자 26,395 → 1 (매핑 표는 rhwp(MIT)에서 이식)
+* HWP 3.x 특수 문자 처리 — 차례 표시(25)를 '-'로 출력하던 문제 수정, 하이픈(24)은 HWP5 하이픈 제어 문자로 변환
+* HWP 3.x → HWP5 변환 결과를 HWPWriter로 저장 가능 (빈 문서 바탕 변환, 탭/빈 셀 처리)
+* 문단 텍스트에 보조 평면 문자(이모지, 한컴 PUA)를 넣을 때 16비트로 잘리던 문제 수정 — ParaText.addString()/insertString(), HWPML 읽기
 
 
 2026.9.11
