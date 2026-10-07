@@ -432,9 +432,6 @@ public class HWPReader {
         if (r.hasPassword()) {
             throw new Exception("Files with passwords are not supported.");
         }
-        if (r.isDistribution()) {
-            throw new Exception("Distribution Files are not supported.");
-        }
 
         r.docInfo();
         r.extractBodyText(listener, tem);
@@ -450,7 +447,11 @@ public class HWPReader {
      * @throws Exception
      */
     private void extractBodyText(TextExtractorListener listener, TextExtractMethod tem) throws Exception {
-        cfr.moveChildStorage("BodyText");
+        if (!isDistribution()) {
+            cfr.moveChildStorage("BodyText");
+        } else {
+            cfr.moveChildStorage("ViewText");
+        }
 
         // 섹션 객체를 만들지 않으므로 빈 섹션으로 문단 번호 상태만 섹션 단위로 초기화한다.
         ParaHeadMaker paraHeadMaker = new ParaHeadMaker(hwpFile);
@@ -475,7 +476,7 @@ public class HWPReader {
      */
     private void extractSectionText(int sectionIndex, TextExtractorListener listener, TextExtractMethod tem,
                                     ParaHeadMaker paraHeadMaker) throws Exception {
-        StreamReader sr = cfr.getChildStreamReader("Section" + sectionIndex, isCompressed(), getVersion());
+        StreamReader sr = streamReader("Section" + sectionIndex);
         sr.setDocInfo(hwpFile.getDocInfo());
         ForParagraphList.extractText(sr, listener, tem, paraHeadMaker);
         sr.close();
