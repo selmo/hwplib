@@ -72,6 +72,8 @@ public class HWPLibReader {
             case HWP3:
                 HWP3File hwp3 = HWP3Reader.fromBytes(data);
                 return Hwp3ToHwpFileConverter.convert(hwp3);
+            case HWPX:
+                throw new Exception(FormatDetector.ZIP_NOT_SUPPORTED_MESSAGE);
             default:
                 throw new Exception("Unknown or unsupported file format.");
         }

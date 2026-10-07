@@ -12,7 +12,7 @@
 
 | 기능 | 진입점 | 반환 | 비고 |
 |------|--------|------|------|
-| 포맷 자동 판별 | `FormatDetector.detect` / `HWPLibReader.detectFormat` | `FileFormat` | HWP5/HWP3/HWPML/UNKNOWN |
+| 포맷 자동 판별 | `FormatDetector.detect` / `HWPLibReader.detectFormat` | `FileFormat` | HWP5/HWP3/HWPML/HWPX/UNKNOWN |
 | 통합 읽기 | `HWPLibReader` | `HWPFile` | **HWP5·HWPML·HWP3 모두 지원**(HWP3는 변환기 경유) |
 | HWPML 읽기 | `HWPMLReader` | `HWPFile` | 기존 도구(TextExtractor 등) 그대로 재사용 |
 | HWP 3.x 읽기 | `HWP3Reader` | `HWP3File` | 전용 모델. 텍스트(`getText()`)·표 구조(`getTables()`) |
@@ -33,7 +33,7 @@ kr.dogfoot.hwplib.tool.hwp3conv     Hwp3ToHwpFileConverter
 ## 2. 포맷 자동 판별
 
 ### `enum FileFormat`
-`HWP5` · `HWP3` · `HWPML` · `UNKNOWN`
+`HWP5` · `HWP3` · `HWPML` · `HWPX` · `UNKNOWN`
 
 ### `FormatDetector.detect(byte[] head) → FileFormat`
 파일 앞부분 바이트(매직/내용)로 형식을 판별한다. 전체 바이트를 넘겨도 되고, 앞부분만 넘겨도 된다.
@@ -43,7 +43,8 @@ kr.dogfoot.hwplib.tool.hwp3conv     Hwp3ToHwpFileConverter
 | `HWP5` | OLE/CFB 시그니처(`D0 CF 11 E0 …`) |
 | `HWP3` | `"HWP Document File V3.00 …"` (30바이트 인식 정보) |
 | `HWPML` | XML 선언 후 `<HWPML …>` 루트 (BOM/UTF-16 고려) |
-| `UNKNOWN` | 위 어디에도 해당하지 않음(예: .hwpx ZIP) |
+| `HWPX` | ZIP 첫 항목 `mimetype`의 내용이 `application/hwp+zip` (판별만 하며 읽기는 미지원 — hwpxlib 사용) |
+| `UNKNOWN` | 위 어디에도 해당하지 않음(예: HWPX가 아닌 ZIP) |
 
 ```java
 byte[] data = Files.readAllBytes(Path.of("sample.hwp"));
@@ -65,7 +66,7 @@ public static FileFormat detectFormat(byte[] data)
 ```
 
 ```java
-HWPFile hwp = HWPLibReader.fromFile("sample.hwp");     // HWP5 / HWPML / HWP3(자동 변환)
+HWPFile hwp = HWPLibReader.fromFile("sample.hwp");     // HWP5 / HWPML / HWP3(자동 변환), HWPX는 안내 예외
 String text = TextExtractor.extract(hwp, TextExtractMethod.InsertControlTextBetweenParagraphText);
 ```
 

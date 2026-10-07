@@ -1,6 +1,9 @@
 package kr.dogfoot.hwplib.reader;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
 
 /**
  * 파일의 앞부분 바이트를 보고 한글 문서 파일의 종류({@link FileFormat})를 판별하는 객체.
@@ -9,6 +12,7 @@ import java.nio.charset.StandardCharsets;
  *     <li>HWP5 : OLE2/Compound File 시그니처(D0 CF 11 E0 A1 B1 1A E1)로 시작</li>
  *     <li>HWP3 : 텍스트 "HWP Document File V3.00"로 시작</li>
  *     <li>HWPML : (BOM 이후) "&lt;?xml" 또는 "&lt;HWPML"로 시작하는 XML</li>
+ *     <li>HWPX : ZIP 첫 항목이 "mimetype"(내용 "application/hwp+zip") 또는 HWPX 패키지 고유 경로</li>
  * </ul>
  */
 public class FormatDetector {
@@ -25,6 +29,25 @@ public class FormatDetector {
      * 전체 인식 정보는 "HWP Document File V3.00 \x1a\1\2\3\4\5" (30바이트)이다.
      */
     public static final String HWP3_SIGNATURE_TEXT = "HWP Document File V3.00";
+
+    /**
+     * HWPX 등 ZIP 기반 문서를 열려고 할 때의 안내 메시지.
+     */
+    public static final String ZIP_NOT_SUPPORTED_MESSAGE =
+            "This file is a ZIP-based document (HWPX or OOXML), not HWP 5.0. "
+                    + "HWPX is not supported by hwplib; use hwpxlib instead.";
+
+    /**
+     * ZIP 로컬 파일 헤더 시그니처(PK\3\4).
+     */
+    private static final byte[] ZIP_SIGNATURE = {0x50, 0x4B, 0x03, 0x04};
+
+    /**
+     * HWPX 패키지에만 있는 항목 경로의 접두어.
+     */
+    private static final String[] HWPX_ENTRY_PREFIXES = {"Contents/", "BinData/", "Preview/", "version.xml"};
+
+    private static final byte[] HWPX_MIMETYPE = "application/hwp+zip".getBytes(StandardCharsets.US_ASCII);
 
     private static final byte[] HWP3_SIGNATURE =
             HWP3_SIGNATURE_TEXT.getBytes(StandardCharsets.US_ASCII);
@@ -53,7 +76,67 @@ public class FormatDetector {
         if (looksLikeHWPML(head)) {
             return FileFormat.HWPML;
         }
+        if (isHWPX(head)) {
+            return FileFormat.HWPX;
+        }
         return FileFormat.UNKNOWN;
+    }
+
+    /**
+     * HWPX(OWPML) 패키지인지 확인한다. ZIP 첫 번째 항목으로 판단한다.
+     * <ul>
+     *     <li>"mimetype" 항목의 내용이 "application/hwp+zip" (비압축 또는 deflate 압축)</li>
+     *     <li>"mimetype"이 첫 항목이 아니어도, 첫 항목이 HWPX 패키지 고유 경로(Contents/, BinData/, Preview/, version.xml)</li>
+     * </ul>
+     */
+    private static boolean isHWPX(byte[] head) {
+        if (!startsWith(head, 0, ZIP_SIGNATURE) || head.length < 30) {
+            return false;
+        }
+        int method = (head[8] & 0xFF) | (head[9] & 0xFF) << 8;
+        int compressedSize = (head[18] & 0xFF) | (head[19] & 0xFF) << 8 | (head[20] & 0xFF) << 16 | (head[21] & 0xFF) << 24;
+        int nameLength = (head[26] & 0xFF) | (head[27] & 0xFF) << 8;
+        int extraLength = (head[28] & 0xFF) | (head[29] & 0xFF) << 8;
+        if (head.length < 30 + nameLength) {
+            return false;
+        }
+        String name = new String(head, 30, nameLength, StandardCharsets.US_ASCII);
+        if (name.equals("mimetype")) {
+            int dataOffset = 30 + nameLength + extraLength;
+            if (method == 0) {
+                return startsWith(head, dataOffset, HWPX_MIMETYPE);
+            } else if (method == 8) {
+                return startsWith(inflate(head, dataOffset, compressedSize), 0, HWPX_MIMETYPE);
+            }
+            return false;
+        }
+        for (String prefix : HWPX_ENTRY_PREFIXES) {
+            if (name.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * deflate로 압축된 데이터를 푼다. 실패하면 빈 배열을 반환한다.
+     */
+    private static byte[] inflate(byte[] data, int offset, int length) {
+        if (offset >= data.length) {
+            return new byte[0];
+        }
+        int available = Math.min(length > 0 ? length : data.length - offset, data.length - offset);
+        Inflater inflater = new Inflater(true);
+        try {
+            inflater.setInput(data, offset, available);
+            byte[] out = new byte[64];
+            int n = inflater.inflate(out);
+            return Arrays.copyOf(out, n);
+        } catch (DataFormatException e) {
+            return new byte[0];
+        } finally {
+            inflater.end();
+        }
     }
 
     private static boolean startsWith(byte[] data, int offset, byte[] prefix) {

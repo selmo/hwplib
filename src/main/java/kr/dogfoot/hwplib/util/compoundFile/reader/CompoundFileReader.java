@@ -2,6 +2,7 @@ package kr.dogfoot.hwplib.util.compoundFile.reader;
 
 import kr.dogfoot.hwplib.object.fileheader.FileVersion;
 import kr.dogfoot.hwplib.org.apache.poi.poifs.filesystem.*;
+import kr.dogfoot.hwplib.reader.FormatDetector;
 
 import java.io.*;
 import java.util.Set;
@@ -28,7 +29,7 @@ public class CompoundFileReader {
      * @throws IOException 파일 에러
      */
     public CompoundFileReader(File file) throws IOException {
-        fs = new POIFSFileSystem(new FileInputStream(file));
+        fs = openFileSystem(new FileInputStream(file));
         currentStorage = fs.getRoot();
     }
 
@@ -39,8 +40,23 @@ public class CompoundFileReader {
      * @throws IOException 파일 에러
      */
     public CompoundFileReader(InputStream is) throws IOException {
-        fs = new POIFSFileSystem(is);
+        fs = openFileSystem(is);
         currentStorage = fs.getRoot();
+    }
+
+    /**
+     * MS Compound 파일을 연다. HWPX 등 ZIP 기반 문서이면 안내 메시지와 함께 예외를 던진다.
+     *
+     * @param is Input Stream 객체
+     * @return 열린 파일 시스템
+     * @throws IOException 파일 에러
+     */
+    private static POIFSFileSystem openFileSystem(InputStream is) throws IOException {
+        try {
+            return new POIFSFileSystem(is);
+        } catch (OfficeXmlFileException e) {
+            throw new IOException(FormatDetector.ZIP_NOT_SUPPORTED_MESSAGE, e);
+        }
     }
 
     /**
