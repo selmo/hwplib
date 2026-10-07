@@ -119,6 +119,10 @@ public class HWPReader {
      * MS Compound 파일을 읽기 위한 리더 객체
      */
     private CompoundFileReader cfr;
+    /**
+     * 실제로 읽을 섹션 개수
+     */
+    private int sectionCount;
 
     /**
      * 생성자
@@ -196,7 +200,7 @@ public class HWPReader {
             cfr.moveChildStorage("ViewText");
         }
 
-        int sectionCount = hwpFile.getDocInfo().getDocumentProperties().getSectionCount();
+        sectionCount = availableSectionCount();
         for (int index = 0; index < sectionCount; index++) {
             section(index);
         }
@@ -229,7 +233,25 @@ public class HWPReader {
     }
 
     private boolean isLastSection(int index) {
-        return index + 1 == hwpFile.getDocInfo().getDocumentProperties().getSectionCount();
+        return index + 1 == sectionCount;
+    }
+
+    /**
+     * 현재 스토리지에서 읽을 수 있는 섹션 개수를 반환한다.
+     * 문서 속성의 구역 개수보다 섹션 스트림이 적으면(일부 비한글 프로그램이 저장한 파일)
+     * 연속해서 존재하는 섹션 스트림까지만 읽는다.
+     *
+     * @return 읽을 수 있는 섹션 개수
+     * @throws Exception
+     */
+    private int availableSectionCount() throws Exception {
+        int declared = hwpFile.getDocInfo().getDocumentProperties().getSectionCount();
+        for (int index = 0; index < declared; index++) {
+            if (!cfr.isChildStream("Section" + index)) {
+                return index;
+            }
+        }
+        return declared;
     }
 
     private void memo(StreamReader sr) throws Exception {
@@ -428,7 +450,7 @@ public class HWPReader {
     private void extractBodyText(TextExtractorListener listener, TextExtractMethod tem) throws Exception {
         cfr.moveChildStorage("BodyText");
 
-        int sectionCount = hwpFile.getDocInfo().getDocumentProperties().getSectionCount();
+        int sectionCount = availableSectionCount();
         for (int index = 0; index < sectionCount; index++) {
             extractSectionText(index, listener, tem);
         }

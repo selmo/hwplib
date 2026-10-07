@@ -25,7 +25,9 @@ public class ParaHeadMaker {
         this.hwpFile = hwpFile;
         
         makeDefaultNumbering();
-        setSectionDefine(hwpFile.getBodyText().getSectionList().get(0));
+        if (hwpFile.getBodyText().getSectionList().size() > 0) {
+            setSectionDefine(hwpFile.getBodyText().getSectionList().get(0));
+        }
         paraNumberForNumbering = new ParaNumber();
     }
 
