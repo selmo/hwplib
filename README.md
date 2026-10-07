@@ -72,6 +72,10 @@ hwplib의 기능에 대한 질문, 버그 수정 요청은 issues 란을 이용�
 * HWP 3.x 특수 문자 처리 — 차례 표시(25)를 '-'로 출력하던 문제 수정, 하이픈(24)은 HWP5 하이픈 제어 문자로 변환
 * HWP 3.x → HWP5 변환 결과를 HWPWriter로 저장 가능 (빈 문서 바탕 변환, 탭/빈 셀 처리)
 * 문단 텍스트에 보조 평면 문자(이모지, 한컴 PUA)를 넣을 때 16비트로 잘리던 문제 수정 — ParaText.addString()/insertString(), HWPML 읽기
+* 변경 추적(교정) 문서에서 삭제된 텍스트 제외 — 최종본만 추출 (TextExtractOption.setInsertTrackChangeDeletedText(true)로 기존 출력)
+    - 범위 태그 종류 = 변경 추적 레코드 종류 (0x10 삽입, 0x11 삭제, 0x12/0x13 서식 변경, 실측)
+* 수식을 LaTeX로 추출하는 옵션 : TextExtractOption.setEquationFormat(EquationFormat.LaTeX) — 문단 안에 $...$로 출력
+    - 한글 수식 스크립트 → LaTeX 변환기 EquationToLatex 추가 (코퍼스 수식 4,733개 KaTeX 렌더링 오류 0)
 
 
 2026.9.11
