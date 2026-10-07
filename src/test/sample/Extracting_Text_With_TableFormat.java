@@ -44,6 +44,7 @@ public class Extracting_Text_With_TableFormat {
         // option.setInsertTableCaption(false); // 표 캡션 제외 (1.1.x 출력 호환)
         // option.setInsertObjectCaption(false); // 그림/도형/수식 캡션 제외 (1.1.x 출력 호환)
         // option.setInsertFormObjectText(false); // 양식 개체 텍스트 제외 (1.1.x 출력 호환)
+        // option.setEquationFormat(EquationFormat.LaTeX); // 수식을 $LaTeX$로 출력 (기본: 한글 수식 스크립트)
 
         System.out.println(TextExtractor.extract(hwpFile, option));
     }

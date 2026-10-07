@@ -164,8 +164,10 @@ public class ForParagraph {
                     case ControlExtend:
                         if (inRange) {
                             Control control = p.getControlList().get(controlIndex);
-                            if (option.isInsertAutoNumber() && control.getType() == ControlType.AutoNumber) {
-                                // 자동 번호는 문단 안 위치에 그대로 넣는다. ("그림 1", "표 2")
+                            if (option.isInsertAutoNumber() && control.getType() == ControlType.AutoNumber
+                                    || option.getEquationFormat() == EquationFormat.LaTeX
+                                    && control.getType() == ControlType.Equation) {
+                                // 자동 번호("그림 1")와 LaTeX 수식("함수 $f(x)$에 대하여")은 문단 안 위치에 그대로 넣는다.
                                 ForControl.extract(control, option, paraHeadMaker, sb);
                             } else if (option.getMethod() == TextExtractMethod.InsertControlTextBetweenParagraphText) {
                                 sb.append("\n");

@@ -13,6 +13,7 @@ import kr.dogfoot.hwplib.object.bodytext.control.gso.GsoControl;
 import kr.dogfoot.hwplib.object.bodytext.control.table.Cell;
 import kr.dogfoot.hwplib.object.bodytext.control.table.Row;
 import kr.dogfoot.hwplib.object.etc.HWPString;
+import kr.dogfoot.hwplib.tool.equation.EquationToLatex;
 import kr.dogfoot.hwplib.tool.textextractor.paraHead.ParaHeadMaker;
 
 import java.io.UnsupportedEncodingException;
@@ -62,7 +63,7 @@ public class ForControl {
                     ForGso.extract((GsoControl) c, option, paraHeadMaker, sb);
                     break;
                 case Equation:
-                    equation((ControlEquation) c, sb);
+                    equation((ControlEquation) c, option, sb);
                     if (option.isInsertObjectCaption() && ((ControlEquation) c).getCaption() != null) {
                         ForParagraphList.extract(((ControlEquation) c).getCaption().getParagraphList(), option, paraHeadMaker, sb);
                     }
@@ -307,10 +308,20 @@ public class ForControl {
      * 수식 컨트롤에서 텍스트를 추출한다
      *
      * @param equation 수식 컨트롤 객체
+     * @param option   추출 옵션 (수식 출력 형식)
      * @param sb       추출된 텍스트를 저정할 StringBuilder 객체
      */
-    private static void equation(ControlEquation equation, StringBuilder sb) {
-        sb.append(equation.getEQEdit().getScript().toUTF16LEString()).append("\n");
+    private static void equation(ControlEquation equation, TextExtractOption option, StringBuilder sb) {
+        String script = equation.getEQEdit().getScript().toUTF16LEString();
+        if (option.getEquationFormat() == EquationFormat.LaTeX) {
+            String latex = EquationToLatex.convert(script);
+            if (latex != null && latex.length() > 0) {
+                // 문단 안 위치에 인라인 수식으로 넣는다.
+                sb.append('$').append(latex).append('$');
+                return;
+            }
+        }
+        sb.append(script).append("\n");
     }
 
     /**

@@ -28,6 +28,10 @@ public class TextExtractOption {
      * 변경 추적(교정) 문서에서 삭제된 텍스트를 추출할지 여부 (기본 false: 최종본만 추출).
      */
     private boolean insertTrackChangeDeletedText;
+    /**
+     * 수식 출력 형식 (기본 {@link EquationFormat#Script}).
+     */
+    private EquationFormat equationFormat;
 
     public TextExtractOption() {
         method = TextExtractMethod.InsertControlTextBetweenParagraphText;
@@ -40,6 +44,7 @@ public class TextExtractOption {
         insertFormObjectText = true;
         insertAutoNumber = true;
         insertTrackChangeDeletedText = false;
+        equationFormat = EquationFormat.Script;
     }
 
     public TextExtractOption(TextExtractMethod method) {
@@ -53,6 +58,7 @@ public class TextExtractOption {
         insertFormObjectText = true;
         insertAutoNumber = true;
         insertTrackChangeDeletedText = false;
+        equationFormat = EquationFormat.Script;
     }
 
     public TextExtractOption(TextExtractMethod method, boolean appendEndingLF) {
@@ -66,6 +72,7 @@ public class TextExtractOption {
         insertFormObjectText = true;
         insertAutoNumber = true;
         insertTrackChangeDeletedText = false;
+        equationFormat = EquationFormat.Script;
     }
 
 
@@ -80,6 +87,7 @@ public class TextExtractOption {
         this.insertFormObjectText = that.insertFormObjectText;
         this.insertAutoNumber = that.insertAutoNumber;
         this.insertTrackChangeDeletedText = that.insertTrackChangeDeletedText;
+        this.equationFormat = that.equationFormat;
     }
 
     public TextExtractMethod getMethod() {
@@ -160,5 +168,13 @@ public class TextExtractOption {
 
     public void setInsertTrackChangeDeletedText(boolean insertTrackChangeDeletedText) {
         this.insertTrackChangeDeletedText = insertTrackChangeDeletedText;
+    }
+
+    public EquationFormat getEquationFormat() {
+        return equationFormat;
+    }
+
+    public void setEquationFormat(EquationFormat equationFormat) {
+        this.equationFormat = equationFormat;
     }
 }
