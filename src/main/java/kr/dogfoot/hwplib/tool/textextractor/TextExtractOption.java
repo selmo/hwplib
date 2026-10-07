@@ -11,6 +11,10 @@ public class TextExtractOption {
      * 표 캡션을 표 뒤에 추출할지 여부 (기본 true). false이면 1.1.x와 같이 캡션을 추출하지 않는다.
      */
     private boolean insertTableCaption;
+    /**
+     * 그리기 개체(그림, 도형 등)와 수식의 캡션을 개체 뒤에 추출할지 여부 (기본 true).
+     */
+    private boolean insertObjectCaption;
 
     public TextExtractOption() {
         method = TextExtractMethod.InsertControlTextBetweenParagraphText;
@@ -19,6 +23,7 @@ public class TextExtractOption {
         insertParaHead = true;
         tableFormat = TableFormat.None;
         insertTableCaption = true;
+        insertObjectCaption = true;
     }
 
     public TextExtractOption(TextExtractMethod method) {
@@ -28,6 +33,7 @@ public class TextExtractOption {
         insertParaHead = true;
         tableFormat = TableFormat.None;
         insertTableCaption = true;
+        insertObjectCaption = true;
     }
 
     public TextExtractOption(TextExtractMethod method, boolean appendEndingLF) {
@@ -37,6 +43,7 @@ public class TextExtractOption {
         insertParaHead = true;
         tableFormat = TableFormat.None;
         insertTableCaption = true;
+        insertObjectCaption = true;
     }
 
 
@@ -47,6 +54,7 @@ public class TextExtractOption {
         this.insertParaHead = that.insertParaHead;
         this.tableFormat = that.tableFormat;
         this.insertTableCaption = that.insertTableCaption;
+        this.insertObjectCaption = that.insertObjectCaption;
     }
 
     public TextExtractMethod getMethod() {
@@ -95,5 +103,13 @@ public class TextExtractOption {
 
     public void setInsertTableCaption(boolean insertTableCaption) {
         this.insertTableCaption = insertTableCaption;
+    }
+
+    public boolean isInsertObjectCaption() {
+        return insertObjectCaption;
+    }
+
+    public void setInsertObjectCaption(boolean insertObjectCaption) {
+        this.insertObjectCaption = insertObjectCaption;
     }
 }

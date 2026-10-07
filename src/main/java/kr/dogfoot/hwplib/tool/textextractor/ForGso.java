@@ -69,6 +69,10 @@ public class ForGso {
             default:
                 break;
         }
+
+        if (option.isInsertObjectCaption() && gc.getCaption() != null) {
+            ForParagraphList.extract(gc.getCaption().getParagraphList(), option, paraHeadMaker, sb);
+        }
     }
 
     /**

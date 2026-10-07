@@ -55,6 +55,9 @@ public class ForControl {
                     break;
                 case Equation:
                     equation((ControlEquation) c, sb);
+                    if (option.isInsertObjectCaption() && ((ControlEquation) c).getCaption() != null) {
+                        ForParagraphList.extract(((ControlEquation) c).getCaption().getParagraphList(), option, paraHeadMaker, sb);
+                    }
                     break;
                 case SectionDefine:
                     break;
