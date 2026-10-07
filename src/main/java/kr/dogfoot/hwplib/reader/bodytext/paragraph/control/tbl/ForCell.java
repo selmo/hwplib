@@ -30,7 +30,8 @@ public class ForCell {
             sr.readRecordHeader();
         }
         if (sr.getCurrentRecordHeader().getTagID() == HWPTag.LIST_HEADER) {
-            listHeader(cell.getListHeader(), sr);
+            // 리스트 헤더 크기가 스펙과 달라도 다음 레코드 위치가 어긋나지 않도록 레코드 범위로 제한해 읽는다.
+            listHeader(cell.getListHeader(), sr.recordBodyReader());
         } else {
             throw new Exception("cell's list header does not exist.");
         }

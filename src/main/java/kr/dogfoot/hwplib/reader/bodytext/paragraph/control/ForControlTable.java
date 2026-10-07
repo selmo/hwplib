@@ -102,7 +102,9 @@ public class ForControlTable {
             sr.readRecordHeader();
         }
         if (sr.getCurrentRecordHeader().getTagID() == HWPTag.TABLE) {
-            ForTable.read(table.getTable(), sr);
+            // 표 레코드 크기가 스펙과 달라도(영역 속성 개수 누락 등) 다음 레코드 위치가 어긋나지 않도록
+            // 레코드 범위로 제한해 읽는다.
+            ForTable.read(table.getTable(), sr.recordBodyReader());
         }
     }
 
@@ -117,7 +119,16 @@ public class ForControlTable {
                 .getCellCountOfRowList();
         for (int rowIndex = 0; rowIndex < rowCount; rowIndex++) {
             Row r = table.addNewRow();
-            row(r, cellCountOfRow.get(rowIndex));
+            int readCount = row(r, cellCountOfRow.get(rowIndex));
+            if (readCount < cellCountOfRow.get(rowIndex)) {
+                // 표 레코드에 기록된 셀 개수보다 실제 셀이 적다. 실제 읽은 개수로 보정하고 표 읽기를 끝낸다.
+                cellCountOfRow.set(rowIndex, readCount);
+                for (int rest = rowIndex + 1; rest < rowCount; rest++) {
+                    table.addNewRow();
+                    cellCountOfRow.set(rest, 0);
+                }
+                break;
+            }
         }
     }
 
@@ -128,10 +139,23 @@ public class ForControlTable {
      * @param cellCount 행에 포함된 셀 개수
      * @throws Exception
      */
-    private void row(Row r, int cellCount) throws Exception {
+    /**
+     * 행의 셀들을 읽는다. 셀의 문단 리스트 헤더가 아닌 레코드가 나오면 멈추고,
+     * 읽은 레코드 헤더는 다음 처리를 위해 남겨 둔다.
+     *
+     * @return 실제 읽은 셀 개수
+     */
+    private int row(Row r, int cellCount) throws Exception {
         for (int cellIndex = 0; cellIndex < cellCount; cellIndex++) {
+            if (sr.isImmediatelyAfterReadingHeader() == false) {
+                sr.readRecordHeader();
+            }
+            if (sr.getCurrentRecordHeader().getTagID() != HWPTag.LIST_HEADER) {
+                return cellIndex;
+            }
             Cell c = r.addNewCell();
             ForCell.read(c, sr);
         }
+        return cellCount;
     }
 }
