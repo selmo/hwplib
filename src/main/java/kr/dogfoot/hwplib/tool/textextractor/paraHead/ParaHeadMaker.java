@@ -108,7 +108,8 @@ public class ParaHeadMaker {
 
 
     private void setSectionDefine(Section section) {
-        if (section.getParagraphCount() > 0 && section.getParagraph(0).getControlList().size() > 0) {
+        if (section.getParagraphCount() > 0 && section.getParagraph(0).getControlList() != null
+                && section.getParagraph(0).getControlList().size() > 0) {
             Control firstControl = section.getParagraph(0).getControlList().get(0);
             if (firstControl.getType() == ControlType.SectionDefine) {
                 sectionDefine = (ControlSectionDefine) firstControl;

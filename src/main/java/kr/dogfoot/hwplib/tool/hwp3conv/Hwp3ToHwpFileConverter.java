@@ -14,16 +14,13 @@ import kr.dogfoot.hwplib.object.bodytext.control.table.Row;
 import kr.dogfoot.hwplib.object.bodytext.paragraph.Paragraph;
 import kr.dogfoot.hwplib.object.bodytext.paragraph.header.ParaHeader;
 import kr.dogfoot.hwplib.object.bodytext.paragraph.text.HWPCharControlExtend;
+import kr.dogfoot.hwplib.object.bodytext.paragraph.text.HWPCharControlInline;
 import kr.dogfoot.hwplib.object.bodytext.paragraph.text.ParaText;
-import kr.dogfoot.hwplib.object.docinfo.DocInfo;
-import kr.dogfoot.hwplib.object.docinfo.ParaShape;
-import kr.dogfoot.hwplib.object.docinfo.Style;
-import kr.dogfoot.hwplib.object.docinfo.parashape.Alignment;
-import kr.dogfoot.hwplib.object.docinfo.parashape.ParaHeadShape;
 import kr.dogfoot.hwplib.object.hwp3.HWP3File;
 import kr.dogfoot.hwplib.object.hwp3.Hwp3Cell;
 import kr.dogfoot.hwplib.object.hwp3.Hwp3Paragraph;
 import kr.dogfoot.hwplib.object.hwp3.Hwp3Table;
+import kr.dogfoot.hwplib.tool.blankfilemaker.BlankFileMaker;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,6 +36,9 @@ import java.util.Set;
  * 텍스트박스(코드 10의 boxType=1 → GSO 사각형 텍스트박스). 변환된 결과는
  * {@code TextExtractor}(표 렌더링 {@code TableFormat} 포함) 등 기존 도구를 그대로
  * 사용할 수 있다.</p>
+ *
+ * <p>변환은 {@link BlankFileMaker}의 빈 문서(글꼴/테두리/스타일/구역 정의 포함)를 바탕으로
+ * 하므로, 변환 결과를 {@code HWPWriter}로 HWP5 파일로 저장할 수 있다.</p>
  *
  * <p>제약(best-effort): 글자/문단 모양·스타일은 기본값 하나로 통일된다. 표의
  * 문단 내 정확한 위치(객체 대체 문자 자리)는 보존되지 않고 해당 문단 끝에 붙는다.
@@ -57,10 +57,11 @@ public class Hwp3ToHwpFileConverter {
      * @throws Exception 변환 중 오류가 발생한 경우
      */
     public static HWPFile convert(HWP3File hwp3) throws Exception {
-        HWPFile hwpFile = new HWPFile();
-        prepareDocInfo(hwpFile.getDocInfo());
-
-        Section section = hwpFile.getBodyText().addNewSection();
+        // 글꼴/테두리/스타일/구역 정의 등을 갖춘 빈 문서를 바탕으로 변환해, 변환 결과를
+        // HWP5 파일로 저장할 수 있게 한다. 빈 문서의 첫 문단(구역/단 정의)에 HWP3 첫 문단을 잇는다.
+        HWPFile hwpFile = BlankFileMaker.make();
+        Section section = hwpFile.getBodyText().getSectionList().get(0);
+        Paragraph firstParagraph = section.getParagraph(0);
 
         // 표/텍스트박스 구조에 속한 문단(셀·캡션)은 평탄화 리스트에서 제외하고
         // 표 변환 시 셀 안에서 변환한다.
@@ -71,37 +72,14 @@ public class Hwp3ToHwpFileConverter {
             if (owned.contains(p)) {
                 continue;
             }
-            Paragraph hp = convertParagraph(p, section);
             if (first) {
-                // TextExtractor가 구역 첫 문단의 컨트롤 리스트를 참조하므로 비어 있어도 만들어 둔다.
-                if (hp.getControlList() == null) {
-                    hp.createControlList();
-                }
+                fillParagraph(p, firstParagraph);
                 first = false;
+            } else {
+                convertParagraph(p, section);
             }
         }
         return hwpFile;
-    }
-
-    /**
-     * 텍스트 추출에 필요한 최소 DocInfo(기본 글자/문단 모양, 스타일)를 만든다.
-     */
-    private static void prepareDocInfo(DocInfo docInfo) {
-        docInfo.addNewCharShape();
-
-        ParaShape paraShape = docInfo.addNewParaShape();
-        paraShape.getProperty1().setAlignment(Alignment.Justify);
-        paraShape.getProperty1().setParaHeadShape(ParaHeadShape.None);
-
-        Style style = docInfo.addNewStyle();
-        style.setHangulName("바탕글");
-        style.setEnglishName("Normal");
-        style.setParaShapeId(0);
-        style.setCharShapeId(0);
-
-        docInfo.getIDMappings().setCharShapeCount(1);
-        docInfo.getIDMappings().setParaShapeCount(1);
-        docInfo.getIDMappings().setStyleCount(1);
     }
 
     /**
@@ -142,9 +120,27 @@ public class Hwp3ToHwpFileConverter {
     private static Paragraph convertParagraph(Hwp3Paragraph src,
                                               ParagraphListInterface container) throws Exception {
         Paragraph para = container.addNewParagraph();
-        para.createText();
-        para.createCharShape();
+        fillParagraph(src, para);
+        return para;
+    }
+
+    /**
+     * HWP3 문단의 내용을 HWP5 문단에 채운다. 문단에 이미 글자(구역/단 정의 등)가 있으면
+     * 그 뒤에 잇는다.
+     */
+    private static void fillParagraph(Hwp3Paragraph src, Paragraph para) throws Exception {
+        if (para.getText() == null) {
+            para.createText();
+        }
+        if (para.getCharShape() == null) {
+            para.createCharShape();
+        }
         ParaText text = para.getText();
+        // 문단 끝 문자(0x0d)는 마지막에 다시 붙인다.
+        int last = text.getCharList().size() - 1;
+        if (last >= 0 && text.getCharList().get(last).getCode() == 0x0d) {
+            text.getCharList().remove(last);
+        }
 
         ParaHeader header = para.getHeader();
         header.setParaShapeId(0);
@@ -158,7 +154,17 @@ public class Hwp3ToHwpFileConverter {
             if (c == ForParagraphList3.SOFT_HYPHEN) {
                 // HWP3 하이픈 → HWP5 하이픈 제어 문자(24). 한컴 변환본과 같다.
                 text.addNewCharControlChar().setCode(24);
-            } else if (c != OBJECT_REPLACEMENT) {
+            } else if (c == '\t') {
+                // 탭은 HWP5에서 인라인 컨트롤(8 코드 단위)이다. 일반 글자로 넣으면 다시 읽을 때
+                // 레코드 경계가 어긋난다.
+                HWPCharControlInline tab = text.addNewInlineControlChar();
+                tab.setCode(9);
+                tab.setAddition(new byte[12]);
+            } else if (c == '\n') {
+                text.addNewCharControlChar().setCode(10);
+            } else if (c < 0x20 || c == OBJECT_REPLACEMENT) {
+                // 그 밖의 제어 문자와 객체 대체 문자는 넣지 않는다.
+            } else {
                 text.addNewNormalChar().setCode(c);
             }
         }
@@ -177,10 +183,11 @@ public class Hwp3ToHwpFileConverter {
         text.addNewCharControlChar().setCode(0x0d);
 
         header.setCharacterCount(text.getCharSize());
-        para.getCharShape().addParaCharShape(0, 0);
-        header.setCharShapeCount(1);
-        header.setLineAlignCount(0);
-        return para;
+        if (para.getCharShape().getPositonShapeIdPairList().isEmpty()) {
+            para.getCharShape().addParaCharShape(0, 0);
+        }
+        header.setCharShapeCount(para.getCharShape().getPositonShapeIdPairList().size());
+        header.setLineAlignCount(para.getLineSeg() == null ? 0 : para.getLineSeg().getLineSegItemList().size());
     }
 
     /**
@@ -218,10 +225,11 @@ public class Hwp3ToHwpFileConverter {
                 lh.setColSpan(sc.getGridColSpan());
                 lh.setWidth(sc.getWidth());
                 lh.setHeight(sc.getHeight());
-                lh.setParaCount(sc.getParagraphs().size());
                 for (Hwp3Paragraph p : sc.getParagraphs()) {
                     convertParagraph(p, cell.getParagraphList());
                 }
+                ensureParagraph(cell.getParagraphList());
+                lh.setParaCount(cell.getParagraphList().getParagraphCount());
             }
         }
 
@@ -248,6 +256,16 @@ public class Hwp3ToHwpFileConverter {
         }
         for (Hwp3Paragraph p : src.getCaption()) {
             convertParagraph(p, rect.getTextBox().getParagraphList());
+        }
+        ensureParagraph(rect.getTextBox().getParagraphList());
+    }
+
+    /**
+     * 문단 리스트가 비어 있으면 빈 문단 하나를 넣는다. HWP5의 셀/글상자는 문단이 하나 이상 있어야 한다.
+     */
+    private static void ensureParagraph(ParagraphListInterface list) throws Exception {
+        if (list.getParagraphCount() == 0) {
+            convertParagraph(new Hwp3Paragraph(""), list);
         }
     }
 
