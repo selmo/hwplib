@@ -102,7 +102,8 @@ public class ForControl {
 
     /**
      * 표 컨트롤에서 텍스트를 추출한다. {@link TextExtractOption#getTableFormat()}에 따라
-     * 셀/행 구분자 또는 마크다운 표로 렌더링하며, 캡션 문단도 표 뒤에 추출한다.
+     * 셀/행 구분자 또는 마크다운 표로 렌더링하며, {@link TextExtractOption#isInsertTableCaption()}이면
+     * 캡션 문단도 표 뒤에 추출한다.
      *
      * @param table         표 컨트롤
      * @param option        추출 옵션
@@ -129,7 +130,7 @@ public class ForControl {
                 break;
         }
 
-        if (table.getCaption() != null) {
+        if (option.isInsertTableCaption() && table.getCaption() != null) {
             ForParagraphList.extract(table.getCaption().getParagraphList(), option, paraHeadMaker, sb);
         }
     }

@@ -16,6 +16,8 @@ import kr.dogfoot.hwplib.tool.textextractor.TextExtractor;
  *     <li>{@link TableFormat#Delimited} : 셀 = 탭, 행 = 줄바꿈</li>
  *     <li>{@link TableFormat#Markdown} : 마크다운 표(병합 셀은 빈 칸). LLM/RAG 입력에 적합</li>
  * </ul>
+ * <p>표 캡션은 기본으로 표 뒤에 추출된다. 1.1.x와 같이 제외하려면
+ * {@link TextExtractOption#setInsertTableCaption(boolean)}에 false를 지정한다.</p>
  */
 public class Extracting_Text_With_TableFormat {
     public static void main(String[] args) throws Exception {
@@ -37,6 +39,7 @@ public class Extracting_Text_With_TableFormat {
 
         TextExtractOption option = new TextExtractOption(TextExtractMethod.InsertControlTextBetweenParagraphText);
         option.setTableFormat(format);
+        // option.setInsertTableCaption(false); // 표 캡션 제외 (1.1.x 출력 호환)
 
         System.out.println(TextExtractor.extract(hwpFile, option));
     }

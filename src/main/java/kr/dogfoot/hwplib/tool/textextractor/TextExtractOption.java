@@ -7,6 +7,10 @@ public class TextExtractOption {
     private boolean appendEndingLF;
     private boolean insertParaHead;
     private TableFormat tableFormat;
+    /**
+     * 표 캡션을 표 뒤에 추출할지 여부 (기본 true). false이면 1.1.x와 같이 캡션을 추출하지 않는다.
+     */
+    private boolean insertTableCaption;
 
     public TextExtractOption() {
         method = TextExtractMethod.InsertControlTextBetweenParagraphText;
@@ -14,6 +18,7 @@ public class TextExtractOption {
         appendEndingLF = true;
         insertParaHead = true;
         tableFormat = TableFormat.None;
+        insertTableCaption = true;
     }
 
     public TextExtractOption(TextExtractMethod method) {
@@ -22,6 +27,7 @@ public class TextExtractOption {
         appendEndingLF = true;
         insertParaHead = true;
         tableFormat = TableFormat.None;
+        insertTableCaption = true;
     }
 
     public TextExtractOption(TextExtractMethod method, boolean appendEndingLF) {
@@ -30,6 +36,7 @@ public class TextExtractOption {
         this.appendEndingLF = appendEndingLF;
         insertParaHead = true;
         tableFormat = TableFormat.None;
+        insertTableCaption = true;
     }
 
 
@@ -39,6 +46,7 @@ public class TextExtractOption {
         this.appendEndingLF = that.appendEndingLF;
         this.insertParaHead = that.insertParaHead;
         this.tableFormat = that.tableFormat;
+        this.insertTableCaption = that.insertTableCaption;
     }
 
     public TextExtractMethod getMethod() {
@@ -79,5 +87,13 @@ public class TextExtractOption {
 
     public void setTableFormat(TableFormat tableFormat) {
         this.tableFormat = tableFormat;
+    }
+
+    public boolean isInsertTableCaption() {
+        return insertTableCaption;
+    }
+
+    public void setInsertTableCaption(boolean insertTableCaption) {
+        this.insertTableCaption = insertTableCaption;
     }
 }
