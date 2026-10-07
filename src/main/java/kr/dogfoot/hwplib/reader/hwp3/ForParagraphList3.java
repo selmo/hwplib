@@ -35,6 +35,10 @@ public class ForParagraphList3 {
 
     /** 객체 대체 문자(표/그림 등 인라인 컨트롤 자리표시). */
     private static final char OBJECT_REPLACEMENT = '￼';
+    /**
+     * 하이픈(특수 문자 24)을 나타내는 소프트 하이픈.
+     */
+    public static final char SOFT_HYPHEN = '\u00AD';
 
     /**
      * 문단 리스트를 끝(빈 문단)까지 읽어 텍스트 문단들을 반환한다.
@@ -152,10 +156,13 @@ public class ForParagraphList3 {
                 text.append(ch == 30 ? ' ' : ' ');
                 return 1; // 총 2 슬롯
             }
-            case 24:   // 하이픈
-            case 25: {
+            case 24: { // 하이픈: 소프트 하이픈(U+00AD)으로 둔다. (HWP5 변환 시 하이픈 제어 문자 24)
                 sr.skip(4);
-                text.append('-');
+                text.append(SOFT_HYPHEN);
+                return 2; // 총 3 슬롯
+            }
+            case 25: { // 제목/표/그림 차례 표시: 보이지 않는 표식이므로 글자를 내지 않는다.
+                sr.skip(4);
                 return 2; // 총 3 슬롯
             }
             case 9: {  // 탭

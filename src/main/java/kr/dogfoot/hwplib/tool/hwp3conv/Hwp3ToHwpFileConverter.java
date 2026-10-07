@@ -1,6 +1,7 @@
 package kr.dogfoot.hwplib.tool.hwp3conv;
 
 import kr.dogfoot.hwplib.object.HWPFile;
+import kr.dogfoot.hwplib.reader.hwp3.ForParagraphList3;
 import kr.dogfoot.hwplib.object.bodytext.ParagraphListInterface;
 import kr.dogfoot.hwplib.object.bodytext.Section;
 import kr.dogfoot.hwplib.object.bodytext.control.ControlTable;
@@ -154,7 +155,10 @@ public class Hwp3ToHwpFileConverter {
         String s = src.getText();
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
-            if (c != OBJECT_REPLACEMENT) {
+            if (c == ForParagraphList3.SOFT_HYPHEN) {
+                // HWP3 하이픈 → HWP5 하이픈 제어 문자(24). 한컴 변환본과 같다.
+                text.addNewCharControlChar().setCode(24);
+            } else if (c != OBJECT_REPLACEMENT) {
                 text.addNewNormalChar().setCode(c);
             }
         }
