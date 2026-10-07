@@ -203,7 +203,9 @@ public class ForGsoControl {
      * @throws Exception
      */
     private void shapeComponentInContainer() throws Exception {
-        sr.readRecordHeader();
+        if (sr.isImmediatelyAfterReadingHeader() == false) {
+            sr.readRecordHeader();
+        }
         if (sr.getCurrentRecordHeader().getTagID() == HWPTag.SHAPE_COMPONENT) {
             long id = sr.readUInt4();
             gsoControl = FactoryForControl.createGso(id, null);
