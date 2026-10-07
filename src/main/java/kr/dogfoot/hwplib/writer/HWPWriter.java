@@ -5,6 +5,7 @@ import kr.dogfoot.hwplib.object.bindata.EmbeddedBinaryData;
 import kr.dogfoot.hwplib.object.bodytext.Section;
 import kr.dogfoot.hwplib.object.bodytext.paragraph.memo.Memo;
 import kr.dogfoot.hwplib.object.docinfo.bindata.BinDataCompress;
+import kr.dogfoot.hwplib.object.fileheader.FileHeader;
 import kr.dogfoot.hwplib.object.fileheader.FileVersion;
 import kr.dogfoot.hwplib.org.apache.poi.hpsf.WritingNotSupportedException;
 import kr.dogfoot.hwplib.util.compoundFile.writer.CompoundFileWriter;
@@ -112,7 +113,7 @@ public class HWPWriter {
      */
     private void fileHeader() throws IOException {
         StreamWriter sw = cfw.openCurrentStream("FileHeader", false, getVersion());
-        ForFileHeader.write(hwpFile.getFileHeader(), sw);
+        ForFileHeader.write(fileHeaderToWrite(), sw);
         cfw.closeCurrentStream();
     }
 
@@ -121,6 +122,23 @@ public class HWPWriter {
      *
      * @return 파일 버전
      */
+    /**
+     * 저장할 파일 헤더를 반환한다. 배포용 문서는 본문을 암호화하지 않고 BodyText에 쓰므로
+     * 배포용 문서 여부를 끈 사본을 반환한다.(원본 객체는 변경하지 않는다)
+     *
+     * @return 저장할 파일 헤더
+     */
+    private FileHeader fileHeaderToWrite() {
+        FileHeader fh = hwpFile.getFileHeader();
+        if (!fh.isDistribution()) {
+            return fh;
+        }
+        FileHeader copied = new FileHeader();
+        copied.copy(fh);
+        copied.setDistribution(false);
+        return copied;
+    }
+
     private FileVersion getVersion() {
         return hwpFile.getFileHeader().getVersion();
     }
@@ -133,7 +151,9 @@ public class HWPWriter {
     private void docInfo() throws Exception {
         StreamWriter sw = cfw.openCurrentStream("DocInfo", isCompressed(), getVersion());
         sw.setDocInfo(hwpFile.getDocInfo());
-        new ForDocInfo().write(hwpFile.getDocInfo(), sw);
+        new ForDocInfo()
+                .setSkipDistributeDocData(hwpFile.getFileHeader().isDistribution())
+                .write(hwpFile.getDocInfo(), sw);
         cfw.closeCurrentStream();
     }
 

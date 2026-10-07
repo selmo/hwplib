@@ -27,7 +27,24 @@ public class ForDocInfo {
     /**
      * 생성자
      */
+    /**
+     * 배포용 문서 데이터 레코드를 쓰지 않을지 여부
+     */
+    private boolean skipDistributeDocData;
+
     public ForDocInfo() {
+        skipDistributeDocData = false;
+    }
+
+    /**
+     * 배포용 문서 데이터 레코드를 쓰지 않도록 설정한다. 배포용 문서를 일반 문서로 저장할 때 사용한다.
+     *
+     * @param skipDistributeDocData 배포용 문서 데이터 레코드를 쓰지 않을지 여부
+     * @return 이 객체
+     */
+    public ForDocInfo setSkipDistributeDocData(boolean skipDistributeDocData) {
+        this.skipDistributeDocData = skipDistributeDocData;
+        return this;
     }
 
     /**
@@ -251,7 +268,7 @@ public class ForDocInfo {
      * @throws IOException
      */
     private void distributeDocData() throws IOException {
-        if (docInfo.getDistributeDocData() != null) {
+        if (!skipDistributeDocData && docInfo.getDistributeDocData() != null) {
             ForUnknown.write(docInfo.getDistributeDocData(),
                     HWPTag.DISTRIBUTE_DOC_DATA, sw);
         }
