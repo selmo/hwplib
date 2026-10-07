@@ -216,12 +216,11 @@ public class HWPMLReader {
                             charShape.addParaCharShape(charPos, curCharShapeId);
                             lastCharShapeId = curCharShapeId;
                         }
-                        int i = 0;
-                        while (i < t.length()) {
-                            int cp = t.codePointAt(i);
-                            text.addNewNormalChar().setCode(cp);
+                        // HWP 문단 텍스트는 UTF-16 코드 단위로 저장한다. 보조 평면 문자는 서로게이트 쌍
+                        // 두 글자가 되며, 글자 위치(charPos)도 코드 단위로 센다.
+                        for (int i = 0; i < t.length(); i++) {
+                            text.addNewNormalChar().setCode(t.charAt(i));
                             charPos++;
-                            i += Character.charCount(cp);
                         }
                     }
                 } else if ("TABLE".equals(name)) {

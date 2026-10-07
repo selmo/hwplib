@@ -53,7 +53,8 @@ public class ParaTextSetter {
         int len = text.length();
         for (int index = 0; index < len; index++) {
             HWPCharNormal ch = new HWPCharNormal();
-            ch.setCode((short) text.codePointAt(index));
+            // UTF-16 코드 단위 그대로 저장한다. (보조 평면 문자는 서로게이트 쌍 두 글자가 된다)
+            ch.setCode(text.charAt(index));
             paraText.getCharList().add(startIndex + index, ch);
         }
     }
