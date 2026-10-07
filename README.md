@@ -46,6 +46,25 @@ hwplib의 기능에 대한 질문, 버그 수정 요청은 issues 란을 이용�
 * hwpx 파일에 대한 라이브러리는 https://github.com/neolord0/hwpxlib 을 참조해 주세요.
 * hwp파일을 hwpx파일로 변환하는 라이브러리는 https://github.com/neolord0/hwp2hwpx 을 참조해 주세요.
 
+2026.10.7 (1.2.1)
+=========================================================================================
+* KORDOC-BENCH 코퍼스(.hwp 1,086개) 기준 읽기 실패 27 → 6개 (남은 6개는 HWPX 4개, 암호 문서 2개)
+* HWPReader.memo() 무한 루프 수정 — 메모가 아닌 레코드 건너뛰기
+* 덧말 텍스트 추출 시 HWPString 객체 주소(HWPString@…)가 출력되던 문제 수정
+* 레코드 크기가 스펙과 다른 파일 읽기 보정 (레코드 범위로 제한해 읽는 StreamReader.recordBodyReader() 추가)
+    - DocInfo 레코드 : 글자/문단 모양이 등록되지 않고 텍스트 추출 시 IndexOutOfBoundsException 나던 문제
+    - 표(TABLE) 레코드, 셀 리스트 헤더 : "cell's list header does not exist." / "This is not paragraph." 오류
+* 표 레코드에 기록된 셀 개수보다 실제 셀이 적은 표 처리
+* 묶음 개체 안의 컨트롤 임의 데이터(CTRL_DATA) 레코드 처리 — "Shape Component must come after CtrlHeader for gso control." 오류 (한글 저장 문서)
+* 문서 속성의 구역 개수보다 섹션 스트림이 적은 파일 처리 — 'no such entry: "Section1"' 오류
+* HWPReader.forExtractText() 수정
+    - 모든 파일에서 NullPointerException 나던 문제 수정 (문단 번호/글머리표 포함, TextExtractor 결과와 동일)
+    - 배포용 문서 지원
+* HWPX 형식 판별 (FileFormat.HWPX) — HWPX 파일을 열면 hwpxlib 사용을 안내하는 예외
+* 표 캡션 추출 옵션 추가 : TextExtractOption.setInsertTableCaption(false)로 1.1.x 출력과 동일하게 캡션 제외 (기본 true)
+* 배포용 문서를 저장하면 다시 읽을 수 없는 파일이 되던 문제 수정 — 일반 문서로 저장
+
+
 2026.9.11
 =========================================================================================
 * 이슈 #315 : ForCtrlHeaderGso.read() 수정
