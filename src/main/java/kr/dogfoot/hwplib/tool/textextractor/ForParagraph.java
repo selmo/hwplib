@@ -3,6 +3,7 @@ package kr.dogfoot.hwplib.tool.textextractor;
 import kr.dogfoot.hwplib.object.bodytext.control.Control;
 import kr.dogfoot.hwplib.object.bodytext.control.ControlType;
 import kr.dogfoot.hwplib.object.bodytext.paragraph.Paragraph;
+import kr.dogfoot.hwplib.object.bodytext.paragraph.rangetag.RangeTagItem;
 import kr.dogfoot.hwplib.object.bodytext.paragraph.text.HWPChar;
 import kr.dogfoot.hwplib.object.bodytext.paragraph.text.HWPCharNormal;
 import kr.dogfoot.hwplib.object.bodytext.paragraph.text.ParaText;
@@ -10,6 +11,7 @@ import kr.dogfoot.hwplib.tool.textextractor.paraHead.ParaHeadMaker;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class ForParagraph {
     public static final int ParaStart = -1;
@@ -136,26 +138,31 @@ public class ForParagraph {
         ParaText pt = p.getText();
         if (pt != null) {
             int controlIndex = 0;
+            List<RangeTagItem> deletedRanges = option.isInsertTrackChangeDeletedText() ? null : deletedRanges(p);
+            long position = 0;
 
             int charCount = pt.getCharList().size();
             for (int charIndex = 0; charIndex < charCount; charIndex++) {
                 HWPChar ch = pt.getCharList().get(charIndex);
+                boolean inRange = startIndex <= charIndex && charIndex <= endIndex
+                        && !isDeleted(deletedRanges, position);
+                position += ch.getCharSize();
                 switch (ch.getType()) {
                     case Normal:
-                        if (startIndex <= charIndex && charIndex <= endIndex) {
+                        if (inRange) {
                             normalText(ch, sb);
                         }
                         break;
                     case ControlChar:
                     case ControlInline:
-                        if (startIndex <= charIndex && charIndex <= endIndex) {
+                        if (inRange) {
                             if (option.isWithControlChar()) {
                                 controlText(ch, sb);
                             }
                         }
                         break;
                     case ControlExtend:
-                        if (startIndex <= charIndex && charIndex <= endIndex) {
+                        if (inRange) {
                             Control control = p.getControlList().get(controlIndex);
                             if (option.isInsertAutoNumber() && control.getType() == ControlType.AutoNumber) {
                                 // 자동 번호는 문단 안 위치에 그대로 넣는다. ("그림 1", "표 2")
@@ -188,6 +195,43 @@ public class ForParagraph {
         }
     }
 
+
+    /**
+     * 변경 추적(교정)에서 삭제된 구간(범위 태그 종류 0x11)을 반환한다. 없으면 null.
+     * 범위 태그 종류는 DocInfo 변경 추적 레코드의 종류와 같다. (0x10 삽입, 0x11 삭제, 0x12/0x13 서식 변경)
+     */
+    private static List<RangeTagItem> deletedRanges(Paragraph p) {
+        if (p.getRangeTag() == null) {
+            return null;
+        }
+        List<RangeTagItem> list = null;
+        for (RangeTagItem item : p.getRangeTag().getRangeTagItemList()) {
+            if (item.getSort() == TRACK_CHANGE_DELETE) {
+                if (list == null) {
+                    list = new ArrayList<RangeTagItem>();
+                }
+                list.add(item);
+            }
+        }
+        return list;
+    }
+
+    private static final short TRACK_CHANGE_DELETE = 0x11;
+
+    /**
+     * 글자 위치(코드 단위)가 삭제된 구간에 속하는지 여부.
+     */
+    private static boolean isDeleted(List<RangeTagItem> deletedRanges, long position) {
+        if (deletedRanges == null) {
+            return false;
+        }
+        for (RangeTagItem item : deletedRanges) {
+            if (item.getRangeStart() <= position && position < item.getRangeEnd()) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * 일반 문자에서 문자를 추출한다.

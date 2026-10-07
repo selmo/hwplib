@@ -24,6 +24,10 @@ public class TextExtractOption {
      * 쪽 번호는 쪽 나눔을 계산하지 않으므로 추출하지 않는다.
      */
     private boolean insertAutoNumber;
+    /**
+     * 변경 추적(교정) 문서에서 삭제된 텍스트를 추출할지 여부 (기본 false: 최종본만 추출).
+     */
+    private boolean insertTrackChangeDeletedText;
 
     public TextExtractOption() {
         method = TextExtractMethod.InsertControlTextBetweenParagraphText;
@@ -35,6 +39,7 @@ public class TextExtractOption {
         insertObjectCaption = true;
         insertFormObjectText = true;
         insertAutoNumber = true;
+        insertTrackChangeDeletedText = false;
     }
 
     public TextExtractOption(TextExtractMethod method) {
@@ -47,6 +52,7 @@ public class TextExtractOption {
         insertObjectCaption = true;
         insertFormObjectText = true;
         insertAutoNumber = true;
+        insertTrackChangeDeletedText = false;
     }
 
     public TextExtractOption(TextExtractMethod method, boolean appendEndingLF) {
@@ -59,6 +65,7 @@ public class TextExtractOption {
         insertObjectCaption = true;
         insertFormObjectText = true;
         insertAutoNumber = true;
+        insertTrackChangeDeletedText = false;
     }
 
 
@@ -72,6 +79,7 @@ public class TextExtractOption {
         this.insertObjectCaption = that.insertObjectCaption;
         this.insertFormObjectText = that.insertFormObjectText;
         this.insertAutoNumber = that.insertAutoNumber;
+        this.insertTrackChangeDeletedText = that.insertTrackChangeDeletedText;
     }
 
     public TextExtractMethod getMethod() {
@@ -144,5 +152,13 @@ public class TextExtractOption {
 
     public void setInsertAutoNumber(boolean insertAutoNumber) {
         this.insertAutoNumber = insertAutoNumber;
+    }
+
+    public boolean isInsertTrackChangeDeletedText() {
+        return insertTrackChangeDeletedText;
+    }
+
+    public void setInsertTrackChangeDeletedText(boolean insertTrackChangeDeletedText) {
+        this.insertTrackChangeDeletedText = insertTrackChangeDeletedText;
     }
 }
