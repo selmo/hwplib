@@ -19,6 +19,11 @@ public class TextExtractOption {
      * 양식 개체(체크박스, 라디오 버튼, 명령 단추의 캡션, 입력 상자/콤보 상자의 값)의 텍스트를 추출할지 여부 (기본 true).
      */
     private boolean insertFormObjectText;
+    /**
+     * 자동 번호(그림/표/수식 번호, 각주/미주 번호)를 문단 안 위치에 추출할지 여부 (기본 true).
+     * 쪽 번호는 쪽 나눔을 계산하지 않으므로 추출하지 않는다.
+     */
+    private boolean insertAutoNumber;
 
     public TextExtractOption() {
         method = TextExtractMethod.InsertControlTextBetweenParagraphText;
@@ -29,6 +34,7 @@ public class TextExtractOption {
         insertTableCaption = true;
         insertObjectCaption = true;
         insertFormObjectText = true;
+        insertAutoNumber = true;
     }
 
     public TextExtractOption(TextExtractMethod method) {
@@ -40,6 +46,7 @@ public class TextExtractOption {
         insertTableCaption = true;
         insertObjectCaption = true;
         insertFormObjectText = true;
+        insertAutoNumber = true;
     }
 
     public TextExtractOption(TextExtractMethod method, boolean appendEndingLF) {
@@ -51,6 +58,7 @@ public class TextExtractOption {
         insertTableCaption = true;
         insertObjectCaption = true;
         insertFormObjectText = true;
+        insertAutoNumber = true;
     }
 
 
@@ -63,6 +71,7 @@ public class TextExtractOption {
         this.insertTableCaption = that.insertTableCaption;
         this.insertObjectCaption = that.insertObjectCaption;
         this.insertFormObjectText = that.insertFormObjectText;
+        this.insertAutoNumber = that.insertAutoNumber;
     }
 
     public TextExtractMethod getMethod() {
@@ -127,5 +136,13 @@ public class TextExtractOption {
 
     public void setInsertFormObjectText(boolean insertFormObjectText) {
         this.insertFormObjectText = insertFormObjectText;
+    }
+
+    public boolean isInsertAutoNumber() {
+        return insertAutoNumber;
+    }
+
+    public void setInsertAutoNumber(boolean insertAutoNumber) {
+        this.insertAutoNumber = insertAutoNumber;
     }
 }

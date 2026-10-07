@@ -1,6 +1,11 @@
 package kr.dogfoot.hwplib.tool.textextractor;
 
 import kr.dogfoot.hwplib.object.bodytext.control.*;
+import kr.dogfoot.hwplib.object.bodytext.control.ctrlheader.CtrlHeaderAutoNumber;
+import kr.dogfoot.hwplib.object.bodytext.control.ctrlheader.autonumber.NumberSort;
+import kr.dogfoot.hwplib.object.bodytext.control.sectiondefine.NumberShape;
+import kr.dogfoot.hwplib.object.docinfo.numbering.ParagraphNumberFormat;
+import kr.dogfoot.hwplib.tool.textextractor.paraHead.ParaHeadNumber;
 import kr.dogfoot.hwplib.object.bodytext.control.form.properties.Property;
 import kr.dogfoot.hwplib.object.bodytext.control.form.properties.PropertyNormal;
 import kr.dogfoot.hwplib.object.bodytext.control.form.properties.PropertySet;
@@ -79,6 +84,9 @@ public class ForControl {
                     endnote((ControlEndnote) c, option, paraHeadMaker, sb);
                     break;
                 case AutoNumber:
+                    if (option.isInsertAutoNumber()) {
+                        autoNumber((ControlAutoNumber) c, sb);
+                    }
                     break;
                 case NewNumber:
                     break;
@@ -393,6 +401,45 @@ public class ForControl {
             sb.append(s);
         }
         sb.append("\n");
+    }
+
+    /**
+     * 자동 번호 컨트롤에서 번호 문자열을 추출한다. 한글이 저장 시 계산해 둔 번호 값을 번호 모양에 맞춰
+     * 쓰고, 앞/뒤 장식 문자를 붙인다. 쪽 번호는 쪽 나눔을 계산하지 않으므로 추출하지 않는다.
+     *
+     * @param autoNumber 자동 번호 컨트롤
+     * @param sb         추출된 텍스트를 저정할 StringBuilder 객체
+     */
+    private static void autoNumber(ControlAutoNumber autoNumber, StringBuilder sb) {
+        CtrlHeaderAutoNumber header = autoNumber.getHeader();
+        if (header == null || header.getProperty().getNumberSort() == NumberSort.Page) {
+            return;
+        }
+        NumberShape shape = header.getProperty().getNumberShape();
+        String number = null;
+        if (shape == NumberShape.UserChar || shape == NumberShape.Symbol) {
+            number = decoration(header.getUserSymbol());
+        } else if (shape != null) {
+            ParagraphNumberFormat format = ParagraphNumberFormat.valueOf((byte) shape.getValue());
+            number = ParaHeadNumber.toString(header.getNumber(), format);
+        }
+        if (number == null || number.length() == 0) {
+            number = String.valueOf(header.getNumber());
+        }
+        sb.append(decoration(header.getBeforeDecorationLetter()))
+                .append(number)
+                .append(decoration(header.getAfterDecorationLetter()));
+    }
+
+    /**
+     * 장식 문자를 반환한다. 없거나 공백/NUL이면 빈 문자열을 반환한다.
+     */
+    private static String decoration(HWPString str) {
+        String s = (str == null) ? null : str.toUTF16LEString();
+        if (s == null || s.trim().length() == 0 || s.charAt(0) == 0) {
+            return "";
+        }
+        return s;
     }
 
     /**

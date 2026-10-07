@@ -1,6 +1,7 @@
 package kr.dogfoot.hwplib.tool.textextractor;
 
 import kr.dogfoot.hwplib.object.bodytext.control.Control;
+import kr.dogfoot.hwplib.object.bodytext.control.ControlType;
 import kr.dogfoot.hwplib.object.bodytext.paragraph.Paragraph;
 import kr.dogfoot.hwplib.object.bodytext.paragraph.text.HWPChar;
 import kr.dogfoot.hwplib.object.bodytext.paragraph.text.HWPCharNormal;
@@ -155,7 +156,11 @@ public class ForParagraph {
                         break;
                     case ControlExtend:
                         if (startIndex <= charIndex && charIndex <= endIndex) {
-                            if (option.getMethod() == TextExtractMethod.InsertControlTextBetweenParagraphText) {
+                            Control control = p.getControlList().get(controlIndex);
+                            if (option.isInsertAutoNumber() && control.getType() == ControlType.AutoNumber) {
+                                // 자동 번호는 문단 안 위치에 그대로 넣는다. ("그림 1", "표 2")
+                                ForControl.extract(control, option, paraHeadMaker, sb);
+                            } else if (option.getMethod() == TextExtractMethod.InsertControlTextBetweenParagraphText) {
                                 sb.append("\n");
                                 ForControl.extract(p.getControlList().get(controlIndex),
                                         option,
