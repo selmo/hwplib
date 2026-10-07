@@ -1,6 +1,9 @@
 package kr.dogfoot.hwplib.tool.textextractor;
 
 import kr.dogfoot.hwplib.object.bodytext.control.*;
+import kr.dogfoot.hwplib.object.bodytext.control.form.properties.Property;
+import kr.dogfoot.hwplib.object.bodytext.control.form.properties.PropertyNormal;
+import kr.dogfoot.hwplib.object.bodytext.control.form.properties.PropertySet;
 import kr.dogfoot.hwplib.object.bodytext.control.gso.GsoControl;
 import kr.dogfoot.hwplib.object.bodytext.control.table.Cell;
 import kr.dogfoot.hwplib.object.bodytext.control.table.Row;
@@ -96,6 +99,11 @@ public class ForControl {
                     break;
                 case HiddenComment:
                     hiddenComment((ControlHiddenComment) c, option, paraHeadMaker, sb);
+                    break;
+                case Form:
+                    if (option.isInsertFormObjectText()) {
+                        form((ControlForm) c, sb);
+                    }
                     break;
                 default:
                     break;
@@ -385,6 +393,54 @@ public class ForControl {
             sb.append(s);
         }
         sb.append("\n");
+    }
+
+    /**
+     * 양식 개체 컨트롤에서 텍스트를 추출한다. 체크박스/라디오 버튼/명령 단추는 캡션을,
+     * 입력 상자/콤보 상자는 입력된 값을 추출한다.
+     *
+     * @param form 양식 개체 컨트롤
+     * @param sb   추출된 텍스트를 저정할 StringBuilder 객체
+     */
+    private static void form(ControlForm form, StringBuilder sb) {
+        if (form.getFormObject() == null || form.getFormObject().getType() == null) {
+            return;
+        }
+        PropertySet properties = form.getFormObject().getProperties();
+        String text = null;
+        switch (form.getFormObject().getType()) {
+            case PushButton:
+            case CheckBox:
+            case RadioButton:
+                text = formProperty(properties, "ButtonSet", "Caption");
+                break;
+            case ComboBox:
+                text = formProperty(properties, "ComboBoxSet", "Text");
+                break;
+            case EditorBox:
+                text = formProperty(properties, "EditSet", "Text");
+                break;
+            default:
+                break;
+        }
+        if (text != null && text.trim().length() > 0) {
+            sb.append(text).append("\n");
+        }
+    }
+
+    /**
+     * 양식 개체 속성 집합에서 하위 집합(setName)의 속성(name) 값을 반환한다. 없으면 null.
+     */
+    private static String formProperty(PropertySet properties, String setName, String name) {
+        Property set = properties.getProperty(setName);
+        if (!(set instanceof PropertySet)) {
+            return null;
+        }
+        Property p = ((PropertySet) set).getProperty(name);
+        if (!(p instanceof PropertyNormal)) {
+            return null;
+        }
+        return ((PropertyNormal) p).getValue();
     }
 
     /**

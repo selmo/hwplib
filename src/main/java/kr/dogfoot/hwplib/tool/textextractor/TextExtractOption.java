@@ -15,6 +15,10 @@ public class TextExtractOption {
      * 그리기 개체(그림, 도형 등)와 수식의 캡션을 개체 뒤에 추출할지 여부 (기본 true).
      */
     private boolean insertObjectCaption;
+    /**
+     * 양식 개체(체크박스, 라디오 버튼, 명령 단추의 캡션, 입력 상자/콤보 상자의 값)의 텍스트를 추출할지 여부 (기본 true).
+     */
+    private boolean insertFormObjectText;
 
     public TextExtractOption() {
         method = TextExtractMethod.InsertControlTextBetweenParagraphText;
@@ -24,6 +28,7 @@ public class TextExtractOption {
         tableFormat = TableFormat.None;
         insertTableCaption = true;
         insertObjectCaption = true;
+        insertFormObjectText = true;
     }
 
     public TextExtractOption(TextExtractMethod method) {
@@ -34,6 +39,7 @@ public class TextExtractOption {
         tableFormat = TableFormat.None;
         insertTableCaption = true;
         insertObjectCaption = true;
+        insertFormObjectText = true;
     }
 
     public TextExtractOption(TextExtractMethod method, boolean appendEndingLF) {
@@ -44,6 +50,7 @@ public class TextExtractOption {
         tableFormat = TableFormat.None;
         insertTableCaption = true;
         insertObjectCaption = true;
+        insertFormObjectText = true;
     }
 
 
@@ -55,6 +62,7 @@ public class TextExtractOption {
         this.tableFormat = that.tableFormat;
         this.insertTableCaption = that.insertTableCaption;
         this.insertObjectCaption = that.insertObjectCaption;
+        this.insertFormObjectText = that.insertFormObjectText;
     }
 
     public TextExtractMethod getMethod() {
@@ -111,5 +119,13 @@ public class TextExtractOption {
 
     public void setInsertObjectCaption(boolean insertObjectCaption) {
         this.insertObjectCaption = insertObjectCaption;
+    }
+
+    public boolean isInsertFormObjectText() {
+        return insertFormObjectText;
+    }
+
+    public void setInsertFormObjectText(boolean insertFormObjectText) {
+        this.insertFormObjectText = insertFormObjectText;
     }
 }
