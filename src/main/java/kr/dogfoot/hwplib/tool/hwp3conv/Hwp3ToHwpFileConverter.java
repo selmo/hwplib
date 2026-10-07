@@ -149,14 +149,14 @@ public class Hwp3ToHwpFileConverter {
         header.setParaShapeId(0);
         header.setStyleId((short) 0);
 
+        // HWP5 문단 텍스트는 UTF-16 코드 단위로 저장하므로, 보조 평면 문자(한컴 PUA U+F0xxx 등)는
+        // 서로게이트 쌍 두 글자로 넣는다. (코드 포인트를 그대로 넣으면 16비트로 잘린다)
         String s = src.getText();
-        int i = 0;
-        while (i < s.length()) {
-            int cp = s.codePointAt(i);
-            if (cp != OBJECT_REPLACEMENT) {
-                text.addNewNormalChar().setCode(cp);
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c != OBJECT_REPLACEMENT) {
+                text.addNewNormalChar().setCode(c);
             }
-            i += Character.charCount(cp);
         }
 
         for (Hwp3Table t : src.getTables()) {
