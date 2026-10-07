@@ -5,6 +5,7 @@ import kr.dogfoot.hwplib.object.bodytext.paragraph.Paragraph;
 import kr.dogfoot.hwplib.reader.bodytext.paragraph.ForParagraph;
 import kr.dogfoot.hwplib.tool.textextractor.TextExtractMethod;
 import kr.dogfoot.hwplib.tool.textextractor.TextExtractorListener;
+import kr.dogfoot.hwplib.tool.textextractor.paraHead.ParaHeadMaker;
 import kr.dogfoot.hwplib.util.compoundFile.reader.StreamReader;
 
 /**
@@ -42,6 +43,20 @@ public class ForParagraphList {
      * @throws Exception
      */
     public static void extractText(StreamReader sr, TextExtractorListener listener, TextExtractMethod tem) throws Exception {
+        extractText(sr, listener, tem, null);
+    }
+
+    /**
+     * 문단 리스트에서 텍스트를 추출한다.
+     *
+     * @param sr            스트림 리더
+     * @param listener      텍스트 추출 리스너
+     * @param tem           추출 방법
+     * @param paraHeadMaker 문단 번호/글머리표 생성기 (null이면 문단 머리를 넣지 않는다)
+     * @throws Exception
+     */
+    public static void extractText(StreamReader sr, TextExtractorListener listener, TextExtractMethod tem,
+                                   ParaHeadMaker paraHeadMaker) throws Exception {
         StringBuilder sb = new StringBuilder();
 
         ForParagraph fp = new ForParagraph();
@@ -51,7 +66,7 @@ public class ForParagraphList {
             fp.read(para, sr);
 
             kr.dogfoot.hwplib.tool.textextractor.ForParagraph.
-                    extract(para, tem, null, sb);
+                    extract(para, tem, paraHeadMaker, sb);
             listener.paragraphText(sb.toString());
             sb.setLength(0);
             

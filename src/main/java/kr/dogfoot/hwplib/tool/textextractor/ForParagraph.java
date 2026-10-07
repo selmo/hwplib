@@ -124,7 +124,7 @@ public class ForParagraph {
                                TextExtractOption option,
                                ParaHeadMaker paraHeadMaker,
                                StringBuilder sb) throws UnsupportedEncodingException {
-        if (option.isInsertParaHead() && startIndex <= 0) {
+        if (option.isInsertParaHead() && startIndex <= 0 && paraHeadMaker != null) {
             String head = paraHeadMaker.paraHeadString(p);
             if (head != null && head.length() > 0) {
                 sb.append(head).append(" ");

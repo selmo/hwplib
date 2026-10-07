@@ -1,6 +1,7 @@
 package kr.dogfoot.hwplib.reader;
 
 import kr.dogfoot.hwplib.object.HWPFile;
+import kr.dogfoot.hwplib.object.bodytext.Section;
 import kr.dogfoot.hwplib.object.docinfo.BinData;
 import kr.dogfoot.hwplib.object.docinfo.bindata.BinDataCompress;
 import kr.dogfoot.hwplib.object.etc.HWPTag;
@@ -14,6 +15,7 @@ import kr.dogfoot.hwplib.reader.bodytext.memo.ForMemo;
 import kr.dogfoot.hwplib.reader.docinfo.ForDocInfo;
 import kr.dogfoot.hwplib.tool.textextractor.TextExtractMethod;
 import kr.dogfoot.hwplib.tool.textextractor.TextExtractorListener;
+import kr.dogfoot.hwplib.tool.textextractor.paraHead.ParaHeadMaker;
 import kr.dogfoot.hwplib.util.compoundFile.reader.CompoundFileReader;
 import kr.dogfoot.hwplib.util.compoundFile.reader.StreamReader;
 
@@ -450,9 +452,13 @@ public class HWPReader {
     private void extractBodyText(TextExtractorListener listener, TextExtractMethod tem) throws Exception {
         cfr.moveChildStorage("BodyText");
 
+        // 섹션 객체를 만들지 않으므로 빈 섹션으로 문단 번호 상태만 섹션 단위로 초기화한다.
+        ParaHeadMaker paraHeadMaker = new ParaHeadMaker(hwpFile);
         int sectionCount = availableSectionCount();
         for (int index = 0; index < sectionCount; index++) {
-            extractSectionText(index, listener, tem);
+            paraHeadMaker.startSection(new Section());
+            extractSectionText(index, listener, tem, paraHeadMaker);
+            paraHeadMaker.endSection();
         }
 
         cfr.moveParentStorage();
@@ -464,12 +470,14 @@ public class HWPReader {
      * @param sectionIndex 섹션 인덱스
      * @param listener     텍스트 추출 리스너
      * @param tem          추출 방법
+     * @param paraHeadMaker 문단 번호/글머리표 생성기
      * @throws Exception
      */
-    private void extractSectionText(int sectionIndex, TextExtractorListener listener, TextExtractMethod tem) throws Exception {
+    private void extractSectionText(int sectionIndex, TextExtractorListener listener, TextExtractMethod tem,
+                                    ParaHeadMaker paraHeadMaker) throws Exception {
         StreamReader sr = cfr.getChildStreamReader("Section" + sectionIndex, isCompressed(), getVersion());
         sr.setDocInfo(hwpFile.getDocInfo());
-        ForParagraphList.extractText(sr, listener, tem);
+        ForParagraphList.extractText(sr, listener, tem, paraHeadMaker);
         sr.close();
     }
 }
