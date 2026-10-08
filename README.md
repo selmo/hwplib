@@ -76,6 +76,11 @@ hwplib의 기능에 대한 질문, 버그 수정 요청은 issues 란을 이용�
     - 범위 태그 종류 = 변경 추적 레코드 종류 (0x10 삽입, 0x11 삭제, 0x12/0x13 서식 변경, 실측)
 * 수식을 LaTeX로 추출하는 옵션 : TextExtractOption.setEquationFormat(EquationFormat.LaTeX) — 문단 안에 $...$로 출력
     - 한글 수식 스크립트 → LaTeX 변환기 EquationToLatex 추가 (코퍼스 수식 4,733개 KaTeX 렌더링 오류 0)
+* 손상/조작된 파일 내성 강화 — 무한 루프·메모리 소진 없이 예외로 종료
+    - 무한 루프 수정 : 문단/구역 정의/수식/그리기 개체 레코드 루프 (StreamReader.ensureProgress())
+    - 레코드 크기를 스트림 남은 크기로 제한, 스트림/레코드 끝을 4KB 넘게 읽으면 EOFException
+    - 텍스트 추출 시 대응 컨트롤이 없는 확장 컨트롤 문자는 건너뜀
+    - 레코드 단위 fuzz : HWP5 약 10,400건 · HWP3 5,000건에서 멈춤/Error 0
 
 
 2026.9.11
