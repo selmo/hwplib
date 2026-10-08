@@ -67,7 +67,10 @@ public class ForControlSectionDefine {
             if (ctrlHeaderLevel >= sr.getCurrentRecordHeader().getLevel()) {
                 break;
             }
+            long position = sr.getCurrentPosition();
             readBody();
+            // 모르는 레코드는 건너뛴다. (손상된 파일에서 같은 레코드를 반복하지 않도록)
+            sr.ensureProgress(position);
         }
     }
 

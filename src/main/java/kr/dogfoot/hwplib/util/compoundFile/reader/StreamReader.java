@@ -245,6 +245,12 @@ public class StreamReader {
             if (header.getSize() == 4095) {
                 header.setSize(readUInt4());
             }
+            // 손상된 파일에서 레코드 크기가 스트림에 남은 크기보다 크면 남은 크기로 줄인다.
+            // (존재하지 않는 데이터를 읽느라 메모리를 소진하거나 끝없이 읽는 것을 막는다)
+            long remain = size - read;
+            if (header.getSize() > remain) {
+                header.setSize(Math.max(remain, 0));
+            }
         }
         readAfterHeader = 0;
         return header;
@@ -410,6 +416,20 @@ public class StreamReader {
         r.header.setSize(body.length);
         r.docInfo = docInfo;
         return r;
+    }
+
+    /**
+     * 레코드를 처리한 뒤에도 스트림 위치가 그대로이고 레코드 헤더를 읽은 직후 상태이면(처리하지 못한 레코드)
+     * 그 레코드를 건너뛰고 다음 레코드로 넘어가게 한다. 손상된 파일에서 같은 레코드를 반복 처리하는 것을 막는다.
+     *
+     * @param positionBefore 레코드 처리 전 스트림 위치
+     * @throws IOException
+     */
+    public void ensureProgress(long positionBefore) throws IOException {
+        if (read == positionBefore && isImmediatelyAfterReadingHeader()) {
+            skipToEndRecord();
+            nextRecord();
+        }
     }
 
     public void setDocInfo(DocInfo docInfo) {

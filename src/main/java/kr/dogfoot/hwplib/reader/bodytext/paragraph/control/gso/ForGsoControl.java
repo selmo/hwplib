@@ -80,8 +80,15 @@ public class ForGsoControl {
         caption = null;
         ctrlData = null;
 
+        int ctrlHeaderLevel = sr.getCurrentRecordHeader().getLevel();
         sr.readRecordHeader();
         while (sr.getCurrentRecordHeader().getTagID() != HWPTag.SHAPE_COMPONENT) {
+            if (sr.isEndOfStream() && sr.getCurrentRecordHeader().getSize() == 0
+                    && sr.getCurrentRecordHeader().getTagID() == 0
+                    || sr.getCurrentRecordHeader().getLevel() <= ctrlHeaderLevel) {
+                // 개체 요소 레코드 없이 스트림이 끝나거나 컨트롤 범위를 벗어났다. (손상된 파일)
+                throw new Exception("Shape Component must come after CtrlHeader for gso control.");
+            }
             if (sr.getCurrentRecordHeader().getTagID() == HWPTag.LIST_HEADER) {
                 caption = new Caption();
                 ForCaption.read(caption, sr);
@@ -94,6 +101,10 @@ public class ForGsoControl {
                 if (sr.isImmediatelyAfterReadingHeader() == false) {
                     sr.readRecordHeader();
                 }
+            } else {
+                // 그 밖의 레코드는 건너뛴다.
+                sr.skipToEndRecord();
+                sr.readRecordHeader();
             }
         }
     }

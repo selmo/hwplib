@@ -69,7 +69,10 @@ public class ForParagraph {
                 break;
             }
             if (sr.getCurrentRecordHeader().getTagID() == HWPTag.CTRL_HEADER) {
+                long position = sr.getCurrentPosition();
                 control();
+                // 컨트롤을 전혀 읽지 못했으면(손상된 레코드) 같은 레코드를 반복하지 않도록 건너뛴다.
+                sr.ensureProgress(position);
             } else {
                 skipETCRecord();
             }
@@ -211,7 +214,8 @@ public class ForParagraph {
      * @throws IOException
      */
     private void skipETCRecord() throws IOException {
-        byte[] buffer = new byte[(int) sr.getCurrentRecordHeader().getSize()];
-        sr.readBytes(buffer);
+        sr.skipToEndRecord();
+        // 크기가 0인 레코드는 읽어도 위치가 변하지 않으므로 다음 레코드로 넘어가게 표시한다. (무한 루프 방지)
+        sr.nextRecord();
     }
 }
