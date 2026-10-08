@@ -162,7 +162,8 @@ public class ForParagraph {
                         }
                         break;
                     case ControlExtend:
-                        if (inRange) {
+                        // 손상된 파일에서 확장 컨트롤 문자에 대응하는 컨트롤이 없으면 그 컨트롤만 건너뛴다.
+                        if (inRange && p.getControlList() != null && controlIndex < p.getControlList().size()) {
                             Control control = p.getControlList().get(controlIndex);
                             if (option.isInsertAutoNumber() && control.getType() == ControlType.AutoNumber
                                     || option.getEquationFormat() == EquationFormat.LaTeX

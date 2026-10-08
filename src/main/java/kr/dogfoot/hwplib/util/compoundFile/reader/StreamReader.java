@@ -141,6 +141,25 @@ public class StreamReader {
     public void readBytes(byte[] buffer) throws IOException {
         is.read(buffer);
         forwardPosition(buffer.length);
+        if (read > size + OVER_READ_LIMIT) {
+            // 손상된 개수/크기 값 때문에 끝없이 읽는 것을 막는다.
+            throw new java.io.EOFException("read beyond the end of stream or record");
+        }
+    }
+
+    /**
+     * 스트림(또는 레코드 본문 리더의 레코드) 끝을 넘어 읽기를 허용하는 크기. 넘어 읽은 부분은 0으로 채워진다.
+     * (스펙보다 짧게 저장된 레코드를 읽기 위함. 실측 최대 253바이트)
+     */
+    private static final long OVER_READ_LIMIT = 4096;
+
+    /**
+     * n 바이트를 읽을 수 있는지 확인한다. 손상된 크기 값으로 거대한 버퍼를 할당하지 않도록 할당 전에 검사한다.
+     */
+    private void checkReadable(long n) throws IOException {
+        if (n < 0 || read + n > size + OVER_READ_LIMIT) {
+            throw new java.io.EOFException("read beyond the end of stream or record");
+        }
     }
 
     /**
@@ -166,6 +185,7 @@ public class StreamReader {
      * @throws IOException
      */
     private byte[] readBytes(int n) throws IOException {
+        checkReadable(n);
         byte[] buffer = new byte[n];
         readBytes(buffer);
         return buffer;
